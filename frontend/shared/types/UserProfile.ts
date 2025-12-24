@@ -1,0 +1,23 @@
+export type UserProfile = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  dateOfBirth: string;
+  gender: string;
+  nationalId: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  address: string;
+  isEmailVerified: boolean;
+  emailVerifiedAt: string;
+  lastLoginAt: string;
+  roles: string[];
+  loyaltyPoints: number;
+  membershipTier: string;
+  note: string;
+  orders: string[];
+  createdAt: string;
+  updatedAt: string;
+};

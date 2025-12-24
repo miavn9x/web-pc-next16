@@ -15,6 +15,7 @@ import TourGuide from "@/features/admin/components/TourGuide";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { parseJwt } from "@/shared/utlis/jwt.utils";
+import { UnauthorizedHandler } from "@/features/admin/components/UnauthorizedHandler";
 
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default async function AdminLayout({
 
   if (!accessToken) {
     if (!refreshToken) {
-      redirect("/tai-khoan/dang-nhap");
+      return <UnauthorizedHandler />;
     }
     // Logic refresh token để client tự xử lý hoặc xử lý tại đây (ở đây tạm thời cho qua để client handle)
   } else {
@@ -46,10 +47,10 @@ export default async function AdminLayout({
           ["admin", "employment", "cskh"].includes(role)
         )
       ) {
-         redirect("/");
+         return <UnauthorizedHandler />;
       }
     } catch {
-       redirect("/tai-khoan/dang-nhap");
+       return <UnauthorizedHandler />;
     }
   }
 

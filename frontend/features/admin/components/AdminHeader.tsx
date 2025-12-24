@@ -43,17 +43,17 @@ const AdminHeader = () => {
       await axiosInstance.post("/auth/logout");
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = "/tai-khoan/dang-nhap";
+      window.location.href = "/";
     } catch {
       // Even if API fails, clear local data and redirect to login
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = "/tai-khoan/dang-nhap";
+      window.location.href = "/";
     }
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-[20] shadow-sm">
+    <div className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-20 shadow-sm">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 h-16">
         {isMobile && (
           <button
@@ -69,17 +69,17 @@ const AdminHeader = () => {
           </button>
         )}
 
-        <div className="flex items-center relative z-[10]">
+        <div className="flex items-center relative z-10">
           {(isSidebarOpen && !isMobile) || isMobile ? (
             <Image
               src="/img/logow.jpeg"
               alt="W FOUR TECH"
               width={isMobile ? 180 : 220}
               height={40}
-              className="h-auto max-w-[180px] sm:max-w-[220px] relative z-[10001]"
+              className="h-auto max-w-[180px] sm:max-w-[220px] relative z-10001"
             />
           ) : (
-            <div className="w-10 h-10 flex items-center justify-center relative z-[10001]">
+            <div className="w-10 h-10 flex items-center justify-center relative z-10001">
               <span className="text-red-600 font-bold text-xl">W</span>
             </div>
           )}
@@ -125,7 +125,7 @@ const AdminHeader = () => {
 
             <div 
               id="user-dropdown-menu"
-              className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-[10000] border border-gray-200 transition-all duration-200 ${
+              className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10000 border border-gray-200 transition-all duration-200 ${
                 showUserDropdown 
                   ? "opacity-100 visible translate-y-0" 
                   : "opacity-0 invisible -translate-y-2"

@@ -35,7 +35,7 @@ axiosInstance.interceptors.response.use(
         // Session expired or invalid - Force Logout
         localStorage.clear();
         sessionStorage.clear();
-        window.location.href = "/tai-khoan/dang-nhap";
+        window.location.href = "/";
         return Promise.reject(refreshError);
       }
     }

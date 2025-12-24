@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { parseJwt } from "@/shared/utlis/jwt.utils";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -9,22 +10,29 @@ export function proxy(request: NextRequest) {
 
   // Protect Admin Routes
   if (pathname.startsWith("/wfourtech")) {
-    if (!accessToken && !refreshToken) {
-      return NextResponse.redirect(
-        new URL("/tai-khoan/dang-nhap", request.url)
-      );
+    if (!accessToken) {
+      // If no access token but refresh token exists, let client handle refresh
+      if (refreshToken) {
+        return NextResponse.next();
+      }
+      // No tokens -> Redirect Home
+      return NextResponse.redirect(new URL("/", request.url));
     }
-  }
 
-  // Auth pages (login/register) - Redirect to home if already logged in
-  if (
-    pathname.startsWith("/tai-khoan/dang-nhap") ||
-    pathname.startsWith("/tai-khoan/dang-ky")
-  ) {
-    if (accessToken || refreshToken) {
-      // Optional: Redirect to home or dashboard depending on role?
-      // For now, let's just keep them on the page or redirect to home to avoid loops if logic is complex
-      // return NextResponse.redirect(new URL('/', request.url));
+    try {
+      const payload = parseJwt(accessToken);
+      if (
+        !payload.roles ||
+        !payload.roles.some((role: string) =>
+          ["admin", "employment", "cskh"].includes(role)
+        )
+      ) {
+        // Logged in but not admin -> Redirect Home
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    } catch (e) {
+      // Invalid token -> Redirect Home
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
@@ -32,5 +40,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/wfourtech/:path*", "/tai-khoan/:path*"],
+  matcher: ["/wfourtech/:path*"],
 };

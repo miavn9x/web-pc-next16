@@ -8,7 +8,7 @@ export function useRegister() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const userService = useCurrentUser();
+  // const userService = useCurrentUser();
 
   const registerUser = async (payload: RegisterPayload) => {
     setLoading(true);
@@ -17,22 +17,17 @@ export function useRegister() {
       const response: RegisterResponse = await register(payload);
 
       if (response.errorCode === null) {
-        // useCurrentUser returns { user, loading, error }
-        // We need to access user.roles
-        const roles = userService.user?.roles;
-        if (!roles) {
-          router.replace("/tai-khoan/dang-nhap");
-          return;
-        }
-        const isAdmin = roles.some((r: string) => r !== "user");
-        router.replace(isAdmin ? "/wfourtech" : "/");
+        // Registration success
+        return true;
       } else {
         setError(response.message || "Đăng ký thất bại");
+        return false;
       }
     } catch (err: any) {
       setError(
         err?.response?.data?.message || "Lỗi không xác định khi đăng ký"
       );
+      return false;
     } finally {
       setLoading(false);
     }

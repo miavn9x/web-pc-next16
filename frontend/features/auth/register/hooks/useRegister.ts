@@ -10,7 +10,7 @@ export function useRegister() {
   const [error, setError] = useState<string | null>(null);
   // const userService = useCurrentUser();
 
-  const registerUser = async (payload: RegisterPayload) => {
+  const registerUser = async (payload: RegisterPayload): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
@@ -20,14 +20,17 @@ export function useRegister() {
         // Registration success
         return true;
       } else {
-        setError(response.message || "Đăng ký thất bại");
-        return false;
+        const msg = response.message || "Đăng ký thất bại";
+        setError(msg);
+        throw new Error(msg); // Throw loginal error to be caught by component
       }
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message || "Lỗi không xác định khi đăng ký"
-      );
-      return false;
+      const msg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Lỗi không xác định khi đăng ký";
+      setError(msg);
+      throw err; // Propagate error to component
     } finally {
       setLoading(false);
     }

@@ -1,14 +1,13 @@
 "use client";
 
 import { useLogin } from "@/features/auth/login/hooks/useLogin";
+import { getCaptcha } from "@/features/auth/login/services/LoginService";
 import { userService } from "@/features/auth/shared/services/user.service";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { useAuthModal } from "../shared/contexts/AuthModalContext";
-import Captcha from "react-captcha-code";
-import { useRef } from "react";
 
 export const ModalLoginForm = () => {
   const router = useRouter();
@@ -17,25 +16,46 @@ export const ModalLoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [captchaCode, setCaptchaCode] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  
+  // Server-side Captcha State
   const [captchaInput, setCaptchaInput] = useState("");
-  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaImage, setCaptchaImage] = useState("");
+  const [captchaId, setCaptchaId] = useState("");
 
   // Ref for native validation
   const captchaRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
-  const handleChangeCaptcha = (code: string) => {
-    setCaptchaCode(code);
+  const fetchCaptcha = async () => {
+    try {
+      const data = await getCaptcha();
+      setCaptchaId(data.captchaId);
+      setCaptchaImage(data.captchaImage);
+    } catch (error: any) {
+      console.error("Failed to fetch captcha", error);
+      // Nếu lỗi 429 (Too Many Requests), không nên toast liên tục gây khó chịu
+      if (error?.response?.status === 429) {
+          toast.error("Vui lòng đợi một chút trước khi thử lại.");
+      } else {
+          toast.error("Không thể tải mã xác nhận. Vui lòng thử lại.");
+      }
+    }
   };
-  
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
   const handleCaptchaInput = (e: React.ChangeEvent<HTMLInputElement>) => {
       setCaptchaInput(e.target.value);
       e.target.setCustomValidity("");
   };
 
   const handleRefreshCaptcha = () => {
-    setCaptchaKey(prev => prev + 1);
+    setCaptchaInput("");
+    fetchCaptcha();
   };
 
   const validateEmail = (value: string) => {
@@ -62,9 +82,51 @@ export const ModalLoginForm = () => {
       validateEmail(e.target.value);
   };
 
+  const [localLockUntil, setLocalLockUntil] = useState<number | null>(null);
+
+  // Load from LocalStorage on mount (Chỉ để giữ trải nghiệm người dùng, không phải bảo mật chính)
+  useEffect(() => {
+     if (typeof window !== "undefined") {
+         const storedLock = localStorage.getItem("auth_lock_until");
+         if (storedLock) setLocalLockUntil(Number(storedLock));
+     }
+  }, []);
+
+  // Check local lock on mount/render
+  const isLocked = localLockUntil !== null && Date.now() < localLockUntil;
+
+  // Effect to clean up lock if expired
+  // Effect to clean up lock if expired
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+      if (localLockUntil) {
+          // Update immediately to avoid 1s delay
+          setNow(Date.now());
+          
+          const interval = setInterval(() => {
+              const currentTime = Date.now();
+              setNow(currentTime); // Force re-render
+
+              if (currentTime >= localLockUntil) {
+                  setLocalLockUntil(null);
+                  localStorage.removeItem("auth_lock_until");
+              }
+          }, 1000);
+          return () => clearInterval(interval);
+      }
+  }, [localLockUntil]);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Check lock
+    if (isLocked) {
+        toast.error("Bạn đã nhập sai quá nhiều lần. Vui lòng chờ mở khóa.");
+        return;
+    }
 
     // 1. Validate Email (Popular domains)
     const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
@@ -90,18 +152,23 @@ export const ModalLoginForm = () => {
         return;
     }
     
-    if (captchaInput !== captchaCode) {
+    // Check Captcha Input
+    if (!captchaInput.trim()) {
         if (captchaRef.current) {
-            captchaRef.current.setCustomValidity("Mã captcha không đúng! Vui lòng thử lại.");
+            captchaRef.current.setCustomValidity("Vui lòng nhập mã xác nhận.");
             captchaRef.current.reportValidity();
         }
-        handleRefreshCaptcha(); // Auto reset captcha
-        setCaptchaInput(""); // Clear input
         return;
     }
 
     try {
-      await login({ email, password });
+      // Gửi captcha code và id lên server để check
+      await login({ email, password, captchaCode: captchaInput, captchaId });
+      
+      // Thành công -> Xóa lock nếu có (logic local)
+      setLocalLockUntil(null);
+      localStorage.removeItem("auth_lock_until");
+      
       toast.success("Đăng nhập thành công!");
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
@@ -123,15 +190,45 @@ export const ModalLoginForm = () => {
            router.refresh();
         }
       } catch (userError) {
-        console.error("Failed to get user info:", userError);
         closeModal();
         router.refresh();
       }
-    } catch (error) {
-      toast.error("Đăng nhập thất bại. Kiểm tra lại thông tin.");
+    } catch (error: any) {
+      // Refresh captcha ngay lập tức vì code cũ đã bị hủy hoặc không hợp lệ
+      handleRefreshCaptcha();
+
+      // Handle Backend Lock Error
+      if (error?.response?.data?.errorCode === 'AUTH_LOCKED') {
+           const lockUntil = error.response.data.lockUntil; // timestamp returned from BE
+           if (lockUntil) {
+               setLocalLockUntil(lockUntil);
+               localStorage.setItem("auth_lock_until", String(lockUntil));
+               toast.error(error.response.data.message);
+               return;
+           }
+      }
+      
+      const errorMessage = error?.response?.data?.message || "Đăng nhập thất bại. Kiểm tra lại thông tin.";
+      
+      // Nếu lỗi liên quan đến Captcha -> Hiển thị trên ô Captcha
+      if (errorMessage.toLowerCase().includes("mã xác nhận") || errorMessage.toLowerCase().includes("captcha")) {
+         if (captchaRef.current) {
+             captchaRef.current.setCustomValidity(errorMessage);
+             captchaRef.current.reportValidity();
+         }
+      } else if (errorMessage.toLowerCase().includes("mật khẩu") || errorMessage.toLowerCase().includes("email")) {
+         // Nếu lỗi liên quan đến Mật khẩu/Email -> Báo vào ô mật khẩu
+          if (passwordRef.current) {
+            passwordRef.current.setCustomValidity(errorMessage);
+            passwordRef.current.reportValidity();
+         }
+      } else {
+         // Lỗi chung hoặc lỗi tài khoản -> Hiển thị notification chung
+         setLoginError(errorMessage);
+         toast.error(errorMessage);
+      }
     }
   };
-
 
 
   return (
@@ -146,6 +243,11 @@ export const ModalLoginForm = () => {
         }
       `}</style>
       <form className="flex flex-col gap-6 mt-2" onSubmit={handleSubmit}>
+        {loginError && (
+          <div className="bg-red-50 text-red-500 text-sm py-2 px-3 rounded border border-red-200 text-center">
+            {loginError}
+          </div>
+        )}
       <div className="group">
         <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">
           Email của bạn
@@ -172,9 +274,13 @@ export const ModalLoginForm = () => {
         </label>
         <div className="relative">
           <input
+            ref={passwordRef}
             type={showPassword ? "text" : "password"}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              e.target.setCustomValidity(""); // Clear validation error
+            }}
             className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10"
             required
           />
@@ -190,11 +296,6 @@ export const ModalLoginForm = () => {
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-        {/* <div className="text-right mt-1">
-            <button type="button" className="text-sm text-gray-800 hover:underline">
-            Quên mật khẩu?
-            </button>
-        </div> */}
       </div>
 
       <div className="group">
@@ -207,24 +308,23 @@ export const ModalLoginForm = () => {
                     ref={captchaRef}
                     type="text"
                     value={captchaInput}
-                    onChange={handleCaptchaInput}
+                    onChange={(e) => {
+                      handleCaptchaInput(e);
+                      e.target.setCustomValidity(""); // Clear validation error
+                    }}
                     className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 text-center sm:text-left"
                     required
                     placeholder="Nhập mã xác nhận"
                   />
             </div>
             <div className="flex items-center justify-center gap-3 w-full sm:w-auto order-1 sm:order-2">
-                <div className="border border-gray-200 rounded p-1 bg-gray-50 select-none">
-                     <Captcha 
-                        key={captchaKey}
-                        charNum={4}
-                        onChange={handleChangeCaptcha} 
-                        width={160}
-                        height={50}
-                        fontSize={24}
-                        className="cursor-pointer"
-                     />
-                </div>
+                <div 
+                  className="border border-gray-200 rounded p-1 bg-gray-50 select-none cursor-pointer min-w-[120px] min-h-[40px]"
+                  onClick={handleRefreshCaptcha}
+                  title="Nhấn để đổi hình khác"
+                  dangerouslySetInnerHTML={{ __html: captchaImage }}
+                />
+                
                 <button
                     type="button"
                     onClick={(e) => {
@@ -243,14 +343,13 @@ export const ModalLoginForm = () => {
 
       <button
         type="submit"
-        disabled={isLoading}
-        className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-3 rounded text-[16px] transition-all shadow-sm mt-2 disabled:opacity-50"
+        disabled={isLoading || isLocked}
+        className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-3 rounded text-[16px] transition-all shadow-sm mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Đang xử lý..." : "Đăng nhập"}
+        {isLocked 
+          ? `Tạm khóa (${Math.ceil((localLockUntil! - now) / 1000)}s)`
+          : (isLoading ? "Đang xử lý..." : "Đăng nhập")}
       </button>
-
-
-
 
     </form>
     </>

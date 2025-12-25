@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "127.0.0.1",
+        port: "4000",
+        pathname: "/**",
+      },
+      // Allow images from other device IPs during development
+      {
+        protocol: "http",
+        hostname: "192.168.1.9",
         port: "4000",
         pathname: "/**",
       },

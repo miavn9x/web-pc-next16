@@ -3,6 +3,8 @@ export type RegisterPayload = {
   password: string;
   firstName?: string;
   lastName?: string;
+  captchaId: string;
+  captchaCode: string;
 };
 
 export type RegisterResponse = {

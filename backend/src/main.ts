@@ -1,5 +1,6 @@
 // --- Import Thư Viện và Module Chính ---
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 // --- Import Cấu Hình Ứng Dụng ---
@@ -21,19 +22,36 @@ async function bootstrap() {
   await connectToDatabase();
 
   // Khởi tạo NestJS app với module gốc
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Đăng ký middleware cookie-parser để có thể đọc refreshToken từ HttpOnly Cookie
   app.use(cookieParser());
 
+  // Cấu hình Trust Proxy để lấy đúng IP khi chạy sau Nginx/Load Balancer
+  app.set('trust proxy', true);
+
   // Bật CORS để cho phép frontend từ origin được chỉ định truy cập tài nguyên của backend
   app.enableCors({
-    origin: [
-      'http://localhost:3030',
-      'http://localhost:3000',
-      'http://demobanhtrang.wfourtech.vn',
-      'https://demobanhtrang.wfourtech.vn',
-    ],
+    origin: (requestOrigin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3030',
+        'http://localhost:3000',
+        'http://demobanhtrang.wfourtech.vn',
+        'https://demobanhtrang.wfourtech.vn',
+        'http://192.168.1.9:3000',
+      ];
+
+      // Cho phép request không có origin (như server-to-server, postman, mobile app)
+      if (!requestOrigin) return callback(null, true);
+
+      // Cho phép nếu nằm trong whitelist (Domain thật)
+      if (allowedOrigins.includes(requestOrigin)) return callback(null, true);
+
+      // Nếu KHÔNG PHẢI production, cho phép MỌI REQUEST để tiện testing (LAN, Tunnel, IP lạ...)
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+    },
     credentials: true,
   });
 

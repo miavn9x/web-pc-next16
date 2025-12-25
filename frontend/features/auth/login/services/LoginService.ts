@@ -10,3 +10,11 @@ export const loginUser = async (
   );
   return res.data;
 };
+
+export const getCaptcha = async (): Promise<{
+  captchaId: string;
+  captchaImage: string;
+}> => {
+  const res = await axiosInstance.post("/auth/captcha");
+  return res.data.data;
+};

@@ -1,10 +1,21 @@
 // --- 📦 Import Thư Viện Cần Thiết ---
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  Ip,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 // --- 🔐 Import Guard & Decorator ---
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/jwt/guards/jwt.guard';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 // --- 🧾 Import Kiểu Dữ Liệu & Dịch Vụ ---
 import { JwtService } from 'src/common/jwt/services/jwt.service';
@@ -24,6 +35,7 @@ import { setAuthCookies } from 'src/modules/auth/utils/set-cookie.util';
 
 // --- 🔧 AuthController - Quản Lý Xác Thực ---
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -31,10 +43,15 @@ export class AuthController {
   ) {}
 
   // --- [POST] /auth/register - Đăng Ký Người Dùng ---
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 lần/phút cho đăng ký
   @HttpCode(HttpStatus.OK)
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result: StandardResponse<AuthResponse> = await this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Ip() ip: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result: StandardResponse<AuthResponse> = await this.authService.register(dto, ip);
 
     const accessMaxAge = this.jwtService.getAccessExpiresInMs();
     const refreshMaxAge = this.jwtService.getRefreshExpiresInMs();
@@ -59,10 +76,11 @@ export class AuthController {
   }
 
   // --- [POST] /auth/login - Đăng Nhập Người Dùng ---
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // Giới hạn 10 lần/phút cho đăng nhập
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result: StandardResponse<AuthResponse> = await this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Ip() ip: string, @Res({ passthrough: true }) res: Response) {
+    const result: StandardResponse<AuthResponse> = await this.authService.login(dto, ip);
 
     const accessMaxAge = this.jwtService.getAccessExpiresInMs();
     const refreshMaxAge = this.jwtService.getRefreshExpiresInMs();
@@ -134,6 +152,18 @@ export class AuthController {
       message: result.message,
       data: null,
       errorCode: result.errorCode,
+    };
+  }
+
+  // --- [GET] /auth/captcha - Lấy mã Captcha mới ---
+  @Post('captcha') // Dùng Post để tránh cache browser hoặc GET cũng được
+  @HttpCode(HttpStatus.OK)
+  async getCaptcha() {
+    const result = await this.authService.generateCaptcha();
+    return {
+      message: 'Lấy captcha thành công',
+      data: result,
+      errorCode: null,
     };
   }
 }

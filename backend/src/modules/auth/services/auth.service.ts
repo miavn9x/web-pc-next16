@@ -1,11 +1,14 @@
-// --- Nhập Thư Viện NestJS ---
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthErrorCode } from '../constants/auth-error-code.enum';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import * as crypto from 'crypto';
+import * as svgCaptcha from 'svg-captcha';
 
 // --- Nhập Các Dịch Vụ Nội Bộ ---
 import { JwtService } from '../../../common/jwt/services/jwt.service';
 import { setAuthCookies } from '../utils/set-cookie.util';
+import { AuthThrottlerService } from './auth-throttler.service';
 
 // --- Nhập Repository ---
 import { AuthRepository } from 'src/modules/auth/repositories/auth.repository';
@@ -20,6 +23,13 @@ import { Model } from 'mongoose';
 import { JwtPayload } from '../../../common/jwt/types/jwt.type';
 import { User, UserDocument } from '../../users/schemas/user.schema';
 
+// --- Định Nghĩa Interface Cache Manager (Fix lỗi ESLint) ---
+interface CacheManager {
+  get<T>(key: string): Promise<T | undefined | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  del(key: string): Promise<void>;
+}
+
 // --- Định Nghĩa Auth Service ---
 // Xử lý nghiệp vụ xác thực, phân quyền và quản lý phiên đăng nhập
 @Injectable()
@@ -27,16 +37,65 @@ export class AuthService {
   constructor(
     private readonly authRepo: AuthRepository, // Xử lý nghiệp vụ xác thực và phiên
     private readonly jwtService: JwtService, // Tạo và xác thực token
+    private readonly authThrottler: AuthThrottlerService, // Xử lý rate limit
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>, // Truy cập bảng người dùng
+    @Inject(CACHE_MANAGER) private cacheManager: CacheManager, // Sử dụng Interface đã định nghĩa
   ) {}
+
+  // --- Tạo Captcha ---
+  async generateCaptcha() {
+    const { data, text } = svgCaptcha.create({
+      size: 4,
+      noise: 2,
+      color: true,
+      background: '#f0f0f0',
+      width: 120,
+      height: 40,
+    });
+
+    const captchaId = crypto.randomUUID();
+    // Lưu text vào cache, hết hạn sau 5 phút
+    await this.cacheManager.set(`captcha:${captchaId}`, text.toLowerCase(), 5 * 60 * 1000);
+
+    return {
+      captchaId,
+      captchaImage: data,
+    };
+  }
+
+  // --- Validate Captcha ---
+  private async validateCaptcha(captchaId: string, captchaCode: string) {
+    if (!captchaId || !captchaCode) return false;
+    const cachedCode = await this.cacheManager.get(`captcha:${captchaId}`);
+    if (!cachedCode) {
+      return false; // Hết hạn hoặc không tồn tại
+    }
+    // Xóa ngay sau khi dùng để tránh replay attack
+    await this.cacheManager.del(`captcha:${captchaId}`);
+    return cachedCode === captchaCode.toLowerCase();
+  }
 
   // --- Đăng Ký Người Dùng ---
   /**
    * Xử lý đăng ký tài khoản mới cho người dùng
    */
-  async register(dto: RegisterDto) {
-    const { email, password } = dto;
+  async register(dto: RegisterDto, ip: string) {
+    const { email, password, captchaId, captchaCode } = dto;
+
+    // 0. Kiểm tra Rate Limit
+    console.log(`[DEBUG] Register Check - IP: ${ip}, Email: ${email}`);
+    await this.authThrottler.checkLimit(ip, email);
+
+    // 0.1 Validate Captcha Server-Side
+    const isCaptchaValid = await this.validateCaptcha(captchaId, captchaCode);
+    console.log(`[DEBUG] Captcha Valid: ${isCaptchaValid}, Code: ${captchaCode}, ID: ${captchaId}`);
+
+    if (!isCaptchaValid) {
+      console.log(`[DEBUG] Incrementing Rate Limit for IP: ${ip}`);
+      await this.authThrottler.increment(ip, email);
+      throw new UnauthorizedException('Mã xác nhận không chính xác hoặc đã hết hạn');
+    }
 
     // Kiểm tra định dạng email và kiểm tra trùng
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -72,8 +131,19 @@ export class AuthService {
   /**
    * Xử lý đăng nhập người dùng và sinh token
    */
-  async login(dto: LoginDto) {
-    const { email, password } = dto;
+  async login(dto: LoginDto, ip: string) {
+    const { email, password, captchaId, captchaCode } = dto;
+
+    // 0. Kiểm tra Rate Limit (Khóa nếu sai quá nhiều theo IP + Email)
+    await this.authThrottler.checkLimit(ip, email);
+
+    // 0.1 Validate Captcha Server-Side
+    const isCaptchaValid = await this.validateCaptcha(captchaId, captchaCode);
+    if (!isCaptchaValid) {
+      // Nhập sai Captcha -> Tăng đếm lỗi ngay lập tức
+      await this.authThrottler.increment(ip, email);
+      throw new UnauthorizedException('Mã xác nhận không chính xác hoặc đã hết hạn');
+    }
 
     // Kiểm tra định dạng email hợp lệ
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -97,6 +167,8 @@ export class AuthService {
     // Tìm người dùng theo email
     const user = await this.userModel.findOne({ email });
     if (!user) {
+      // Tăng số lần sai kể cả khi user không tồn tại (chống dò email)
+      await this.authThrottler.increment(ip, email);
       return {
         message: 'Email chưa được đăng ký',
         data: null,
@@ -105,7 +177,18 @@ export class AuthService {
     }
 
     // Uỷ quyền repository xử lý đăng nhập
-    return this.authRepo.handleLogin(user, password);
+    try {
+      const result = await this.authRepo.handleLogin(user, password);
+
+      // Đăng nhập thành công -> Reset bộ đếm
+      await this.authThrottler.reset(ip, email);
+
+      return result;
+    } catch (error) {
+      // Nếu đăng nhập thất bại (sai pass - có exception) -> Tăng số lần sai
+      await this.authThrottler.increment(ip, email);
+      throw error;
+    }
   }
 
   // --- Đăng Xuất Người Dùng ---

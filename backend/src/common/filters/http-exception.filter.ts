@@ -49,10 +49,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Gửi phản hồi lỗi chuẩn về phía client
-    response.status(status).json({
-      message, // Nội dung lỗi sẽ hiển thị
-      data: null, // Không trả về dữ liệu khi có lỗi
-      errorCode, // Mã lỗi rõ ràng để client xử lý (nếu có)
-    });
+    const responseBody = {
+      message,
+      data: null,
+      errorCode,
+      ...(typeof exceptionResponse === 'object' ? exceptionResponse : {}),
+    };
+
+    response.status(status).json(responseBody);
   }
 }

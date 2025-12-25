@@ -1,6 +1,7 @@
 // --- Import Mongoose ---
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { UnauthorizedException } from '@nestjs/common';
 // --- Import Hashing ---
 import * as argon2 from 'argon2';
 // --- Import Services ---
@@ -95,11 +96,7 @@ export class AuthRepository {
     const isPasswordValid =
       userWithPassword && (await argon2.verify(userWithPassword.password, password));
     if (!isPasswordValid) {
-      return {
-        message: 'Email hoặc mật khẩu không chính xác',
-        data: null,
-        errorCode: AuthErrorCode.INVALID_CREDENTIALS,
-      };
+      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
 
     // 2. Cập nhật thời điểm đăng nhập

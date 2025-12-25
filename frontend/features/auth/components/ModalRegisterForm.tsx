@@ -2,10 +2,10 @@
 
 import { useRegister } from "@/features/auth/register/hooks/useRegister";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import Captcha from "react-captcha-code";
 import { useAuthModal } from "../shared/contexts/AuthModalContext";
+import { getCaptcha } from "@/features/auth/login/services/LoginService";
 
 interface ModalRegisterFormProps {
     onSuccess?: () => void;
@@ -22,9 +22,42 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     });
     
     const [showPassword, setShowPassword] = useState(false);
-    const [captchaCode, setCaptchaCode] = useState("");
+    
+    // Server-side Captcha State
     const [captchaInput, setCaptchaInput] = useState("");
-    const [captchaKey, setCaptchaKey] = useState(0);
+    const [captchaImage, setCaptchaImage] = useState("");
+    const [captchaId, setCaptchaId] = useState("");
+
+    // Lockout State
+    const [localLockUntil, setLocalLockUntil] = useState<number | null>(null);
+    const [now, setNow] = useState(Date.now());
+
+    // Load from LocalStorage on mount
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const storedLock = localStorage.getItem("register_lock_until");
+            if (storedLock) setLocalLockUntil(Number(storedLock));
+        }
+    }, []);
+
+    // Check local lock
+    const isLocked = localLockUntil !== null && now < localLockUntil;
+
+    // Timer Effect
+    useEffect(() => {
+        if (localLockUntil) {
+            setNow(Date.now());
+            const interval = setInterval(() => {
+                const currentTime = Date.now();
+                setNow(currentTime);
+                if (currentTime >= localLockUntil) {
+                    setLocalLockUntil(null);
+                    localStorage.removeItem("register_lock_until");
+                }
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [localLockUntil]);
 
     // Refs for native validation
     const emailRef = useRef<HTMLInputElement>(null);
@@ -33,12 +66,30 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     const firstNameRef = useRef<HTMLInputElement>(null);
     const lastNameRef = useRef<HTMLInputElement>(null);
 
-    const handleChangeCaptcha = (code: string) => {
-        setCaptchaCode(code);
+    const fetchCaptcha = async () => {
+        try {
+            const data = await getCaptcha();
+            setCaptchaId(data.captchaId);
+            setCaptchaImage(data.captchaImage);
+        } catch (error: any) {
+             if (error?.response?.status === 429) {
+                // If fetching captcha is throttled, it means user is locked
+                // We can't really get the lockUntil here easily without standardized error response for GET,
+                // but usually the main lock comes from POST. 
+                toast.error("Vui lòng đợi một chút trước khi thử lại.");
+            } else {
+                toast.error("Không thể tải mã xác nhận. Vui lòng thử lại.");
+            }
+        }
     };
 
+    useEffect(() => {
+        fetchCaptcha();
+    }, []);
+
     const handleRefreshCaptcha = () => {
-        setCaptchaKey(prev => prev + 1);
+        setCaptchaInput("");
+        fetchCaptcha();
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +158,12 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
         e.preventDefault();
         e.stopPropagation();
 
+         // Check lock
+        if (isLocked) {
+            toast.error("Bạn đã nhập sai quá nhiều lần. Vui lòng chờ mở khóa.");
+            return;
+        }
+
         // 1. Validate Email (Popular domains)
         const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
         const emailDomain = formData.email.split("@")[1]?.toLowerCase();
@@ -131,7 +188,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             return;
         }
 
-        // 2. Validate Password (8-32 chars, Uppercase, Special char)
+        // 2. Validate Password
         const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9a-zA-Z]).{8,32}$/;
         if (!passwordRegex.test(formData.password)) {
             if (passwordRef.current) {
@@ -141,28 +198,64 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             return;
         }
         
-        // 3. Validate Captcha
-        if (captchaInput !== captchaCode) {
+        // 3. Check Captcha Input exists
+        if (!captchaInput.trim()) {
             if (captchaRef.current) {
-                captchaRef.current.setCustomValidity("Mã captcha không đúng! Vui lòng thử lại.");
+                captchaRef.current.setCustomValidity("Vui lòng nhập mã xác nhận.");
                 captchaRef.current.reportValidity();
             }
-            // Auto reset
-            handleRefreshCaptcha();
-            setCaptchaInput("");
             return;
         }
 
-        const success = await register({
-            email: formData.email,
-            password: formData.password,
-            firstName: formData.firstName,
-            lastName: formData.lastName
-        });
-        
-        if (success) {
-            toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
-            onSuccess?.();
+        try {
+            const success = await register({
+                email: formData.email,
+                password: formData.password,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                captchaCode: captchaInput,
+                captchaId
+            });
+            
+            // Chỉ đóng modal/chuyển tab khi thực sự thành công (trả về true)
+            if (success === true) {
+                // Clear lock on success
+                setLocalLockUntil(null);
+                localStorage.removeItem("register_lock_until");
+                
+                toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+                if (onSuccess) onSuccess();
+            }
+        } catch (error: any) {
+             // Handle Errors similar to Login
+             handleRefreshCaptcha(); // Refresh captcha on error
+             
+             // Handle Backend Lock Error
+             if (error?.response?.data?.errorCode === 'AUTH_LOCKED') {
+                const lockUntil = error.response.data.lockUntil; // timestamp returned from BE
+                if (lockUntil) {
+                    setLocalLockUntil(lockUntil);
+                    localStorage.setItem("register_lock_until", String(lockUntil));
+                    toast.error(error.response.data.message);
+                    return;
+                }
+             }
+
+             const errorMessage = error?.response?.data?.message || "Đăng ký thất bại.";
+
+             if (errorMessage.toLowerCase().includes("mã xác nhận") || errorMessage.toLowerCase().includes("captcha")) {
+                 if (captchaRef.current) {
+                     captchaRef.current.setCustomValidity(errorMessage);
+                     captchaRef.current.reportValidity();
+                 }
+             } else if (errorMessage.toLowerCase().includes("email")) {
+                  if (emailRef.current) {
+                     emailRef.current.setCustomValidity(errorMessage);
+                     emailRef.current.reportValidity();
+                 }
+             } else {
+                 toast.error(errorMessage);
+             }
         }
     };
     
@@ -188,7 +281,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         value={formData.lastName}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
+                        disabled={isLocked}
+                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                 </div>
@@ -202,7 +296,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         value={formData.firstName}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
+                        disabled={isLocked}
+                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                 </div>
@@ -217,7 +312,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
+                    disabled={isLocked}
+                    className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                 />
             </div>
@@ -232,7 +328,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         value={formData.password}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10"
+                        disabled={isLocked}
+                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                      <button
@@ -242,7 +339,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                           e.stopPropagation();
                           setShowPassword(!showPassword);
                         }}
-                        className="absolute right-0 top-1 text-gray-400 hover:text-gray-600"
+                        disabled={isLocked}
+                        className="absolute right-0 top-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -259,24 +357,23 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                             ref={captchaRef}
                             type="text"
                             value={captchaInput}
-                            onChange={handleCaptchaInput}
-                            className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 text-center sm:text-left"
+                            onChange={(e) => {
+                                handleCaptchaInput(e);
+                                e.target.setCustomValidity("");
+                            }}
+                            disabled={isLocked}
+                            className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 text-center sm:text-left disabled:opacity-50 disabled:cursor-not-allowed"
                             required
                             placeholder="Nhập mã xác nhận"
                           />
                     </div>
                     <div className="flex items-center justify-center gap-3 w-full sm:w-auto order-1 sm:order-2">
-                        <div className="border border-gray-200 rounded p-1 bg-gray-50 select-none">
-                             <Captcha 
-                                key={captchaKey}
-                                charNum={4}
-                                onChange={handleChangeCaptcha} 
-                                width={160}
-                                height={50}
-                                fontSize={24}
-                                className="cursor-pointer"
-                             />
-                        </div>
+                        <div 
+                          className="border border-gray-200 rounded p-1 bg-gray-50 select-none cursor-pointer min-w-[120px] min-h-[40px]"
+                          onClick={!isLocked ? handleRefreshCaptcha : undefined}
+                          title="Nhấn để đổi hình khác"
+                          dangerouslySetInnerHTML={{ __html: captchaImage }}
+                        />
                         <button
                             type="button"
                             onClick={(e) => {
@@ -284,7 +381,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                                 e.stopPropagation();
                                 handleRefreshCaptcha();
                             }}
-                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            disabled={isLocked}
+                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Đổi mã khác"
                         >
                             <RefreshCw size={18} />
@@ -295,15 +393,16 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
 
             <button
                 type="submit"
-                className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-3 rounded text-[16px] transition-all shadow-sm mt-4"
+                disabled={isLocked}
+                className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-3 rounded text-[16px] transition-all shadow-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Đăng ký
+                {isLocked 
+                 ? `Tạm khóa (${Math.ceil((localLockUntil! - now) / 1000)}s)`
+                 : "Đăng ký"}
             </button>
             
 
-             {registerError && (
-              <p className="text-red-500 text-xs mt-2 text-center">{registerError}</p>
-            )}
+
         </form>
         </>
     );

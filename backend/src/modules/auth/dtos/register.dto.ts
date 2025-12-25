@@ -15,4 +15,16 @@ export class RegisterDto {
    */
   @IsNotEmpty({ message: 'Mật khẩu không được bỏ trống' })
   password: string;
+
+  /**
+   * Mã ID của Captcha (được gửi từ server khi client request lấy captcha)
+   */
+  @IsNotEmpty({ message: 'Captcha ID không được để trống' })
+  captchaId: string;
+
+  /**
+   * Mã Code người dùng nhập vào để xác thực
+   */
+  @IsNotEmpty({ message: 'Mã xác nhận không được để trống' })
+  captchaCode: string;
 }

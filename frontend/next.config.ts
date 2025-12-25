@@ -42,6 +42,26 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true,
   },
+  // @ts-ignore
+  allowedDevOrigins: [
+    "localhost:3000",
+    "http://localhost:3000",
+    "192.168.1.9:3000",
+    "http://192.168.1.9:3000",
+    "192.168.1.9", // Thêm IP gốc không port
+    "*.devtunnels.ms",
+    "*.ngrok-free.app",
+  ],
+  // PROXY: Giải quyết vấn đề Mixed Content (HTTPS -> HTTP) cho thiết bị di động
+  async rewrites() {
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: "http://192.168.1.9:4000/api/:path*", // [DEV] Proxy về Backend LAN
+        // destination: "https://miavn9x.id.vn/api/:path*", // [PROD] Sau này có VPS thì mở dòng này
+      },
+    ];
+  },
 };
 
 export default nextConfig;

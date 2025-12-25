@@ -85,6 +85,25 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
 
     useEffect(() => {
         fetchCaptcha();
+
+        // DEV CHECK: Cảnh báo nếu đang chạy Tunnel/LAN mà API lại trỏ về localhost
+        if (typeof window !== "undefined") {
+            const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+            const isApiLocal = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
+
+            if (!isLocal && isApiLocal) {
+                 toast.error(
+                    <div>
+                        <strong>Cấu hình chưa đúng!</strong><br/>
+                        Bạn đang truy cập từ <b>{window.location.hostname}</b><br/>
+                        nhưng API lại trỏ về <b>localhost</b>.<br/>
+                        <span className="text-sm">Hãy sửa file .env: NEXT_PUBLIC_API_URL = IP LAN hoặc Link Tunnel Backend.</span>
+                    </div>, 
+                    { autoClose: 10000 }
+                );
+            }
+        }
     }, []);
 
     const handleRefreshCaptcha = () => {

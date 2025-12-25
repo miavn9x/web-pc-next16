@@ -38,7 +38,6 @@ async function bootstrap() {
         'http://localhost:3000',
         'http://demobanhtrang.wfourtech.vn',
         'https://demobanhtrang.wfourtech.vn',
-        'http://192.168.1.9:3000',
       ];
 
       // Cho phép request không có origin (như server-to-server, postman, mobile app)

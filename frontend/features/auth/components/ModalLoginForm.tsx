@@ -23,6 +23,7 @@ export const ModalLoginForm = () => {
 
   // Ref for native validation
   const captchaRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const handleChangeCaptcha = (code: string) => {
     setCaptchaCode(code);
@@ -37,9 +38,57 @@ export const ModalLoginForm = () => {
     setCaptchaKey(prev => prev + 1);
   };
 
+  const validateEmail = (value: string) => {
+      if (!emailRef.current) return;
+      
+      let error = "";
+      const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+      const emailDomain = value.split("@")[1]?.toLowerCase();
+      const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      
+      if (!value) {
+            error = "Vui lòng nhập email.";
+      } else if (!isEmailFormat) {
+          error = "Email không hợp lệ. Vui lòng kiểm tra lại.";
+      } else if (!allowedDomains.includes(emailDomain)) {
+          error = `Hệ thống chỉ hỗ trợ các loại email: ${allowedDomains.map(d => "@" + d).join(", ")}`;
+      }
+      
+      emailRef.current.setCustomValidity(error);
+      if (error) emailRef.current.reportValidity();
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      validateEmail(e.target.value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // 1. Validate Email (Popular domains)
+    const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+    const emailDomain = email.split("@")[1]?.toLowerCase();
+    
+    // Basic format check
+    const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    
+    if (!isEmailFormat) {
+        if (emailRef.current) {
+            emailRef.current.setCustomValidity("Email không hợp lệ. Vui lòng kiểm tra lại.");
+            emailRef.current.reportValidity();
+        }
+        return;
+    }
+
+    // Domain check
+    if (!allowedDomains.includes(emailDomain)) {
+         if (emailRef.current) {
+            emailRef.current.setCustomValidity(`Hệ thống chỉ hỗ trợ các loại email: ${allowedDomains.map(d => "@" + d).join(", ")}`);
+            emailRef.current.reportValidity();
+        }
+        return;
+    }
     
     if (captchaInput !== captchaCode) {
         if (captchaRef.current) {
@@ -103,9 +152,14 @@ export const ModalLoginForm = () => {
         </label>
         <div className="relative">
             <input
+            ref={emailRef}
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              e.target.setCustomValidity("");
+            }}
+            onBlur={handleBlur}
             className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
             required
             />

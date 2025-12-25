@@ -30,6 +30,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     const emailRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const captchaRef = useRef<HTMLInputElement>(null);
+    const firstNameRef = useRef<HTMLInputElement>(null);
+    const lastNameRef = useRef<HTMLInputElement>(null);
 
     const handleChangeCaptcha = (code: string) => {
         setCaptchaCode(code);
@@ -45,6 +47,57 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
         e.target.setCustomValidity("");
     };
 
+    const validateField = (name: string, value: string) => {
+        let error = "";
+        const ref = {
+            firstName: firstNameRef,
+            lastName: lastNameRef,
+            email: emailRef,
+            password: passwordRef,
+        }[name];
+
+        if (!ref?.current) return;
+
+        switch (name) {
+            case "firstName":
+            case "lastName":
+                // Vietnamese name regex: letters and spaces only, no numbers or special chars
+                if (/\d/.test(value)) {
+                    error = "Tên không được chứa số.";
+                } else if (!/^[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s]*$/.test(value)) {
+                     error = "Tên chỉ được chứa chữ cái và khoảng trắng.";
+                }
+                break;
+            case "email":
+                const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+                const emailDomain = value.split("@")[1]?.toLowerCase();
+                const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                
+                if (!value) {
+                     error = "Vui lòng nhập email.";
+                } else if (!isEmailFormat) {
+                    error = "Email không hợp lệ. Vui lòng kiểm tra lại.";
+                } else if (!allowedDomains.includes(emailDomain)) {
+                    error = `Hệ thống chỉ hỗ trợ các loại email: ${allowedDomains.map(d => "@" + d).join(", ")}`;
+                }
+                break;
+            case "password":
+                // 8-32 chars, Uppercase, Special char
+                const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9a-zA-Z]).{8,32}$/;
+                if (!passwordRegex.test(value)) {
+                    error = "Mật khẩu phải từ 8-32 ký tự, có ít nhất 1 chữ hoa và 1 ký tự đặc biệt (!@#$&*)";
+                }
+                break;
+        }
+
+        ref.current.setCustomValidity(error);
+        if (error) ref.current.reportValidity();
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        validateField(e.target.name, e.target.value);
+    };
+
     const handleCaptchaInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCaptchaInput(e.target.value);
         e.target.setCustomValidity("");
@@ -54,10 +107,25 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // 1. Validate Email (@gmail.com)
-        if (!formData.email.endsWith("@gmail.com")) {
+        // 1. Validate Email (Popular domains)
+        const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+        const emailDomain = formData.email.split("@")[1]?.toLowerCase();
+        
+        // Basic format check
+        const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+        
+        if (!isEmailFormat) {
             if (emailRef.current) {
-                emailRef.current.setCustomValidity("Email phải có đuôi @gmail.com");
+                emailRef.current.setCustomValidity("Email không hợp lệ. Vui lòng kiểm tra lại.");
+                emailRef.current.reportValidity();
+            }
+            return;
+        }
+
+        // Domain check
+        if (!allowedDomains.includes(emailDomain)) {
+             if (emailRef.current) {
+                emailRef.current.setCustomValidity(`Hệ thống chỉ hỗ trợ các loại email: ${allowedDomains.map(d => "@" + d).join(", ")}`);
                 emailRef.current.reportValidity();
             }
             return;
@@ -114,10 +182,12 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                 <div className="group flex-1">
                     <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Họ</label>
                     <input 
+                        ref={lastNameRef}
                         type="text"
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
                         required
                     />
@@ -126,10 +196,12 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                 <div className="group flex-1">
                     <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Tên</label>
                     <input 
+                        ref={firstNameRef}
                         type="text"
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
                         required
                     />
@@ -144,6 +216,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800"
                     required
                 />
@@ -158,6 +231,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10"
                         required
                     />

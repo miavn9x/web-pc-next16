@@ -52,7 +52,7 @@ export const AuthModal = ({
 
         {/* Form */}
         <div className="w-full md:w-[60%] p-8 flex flex-col justify-center">
-          <div className="mb-6">
+          <div className="mb-4">
             <h2 className="text-3xl font-bold text-gray-800 mb-1">
               Xin chào,
             </h2>

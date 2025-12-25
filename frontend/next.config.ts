@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
         port: "4000",
         pathname: "/**",
       },
+      // Dev Tunnel HTTPS (cho test từ xa)
+      {
+        protocol: "https",
+        hostname: "*.devtunnels.ms",
+        pathname: "/**",
+      },
     ],
     unoptimized: true,
   },
@@ -52,6 +58,14 @@ const nextConfig: NextConfig = {
     "*.devtunnels.ms",
     "*.ngrok-free.app",
   ],
+  async rewrites() {
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: "https://83xqq1xp-4000.asse.devtunnels.ms/api/:path*", // Tunnel Backend
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -38,7 +38,7 @@ export class AuthRepository {
    * @param dto - Dữ liệu đăng ký người dùng (email, password)
    * @returns Thông báo thành công cùng access token và refresh token
    */
-  async handleRegister(dto: RegisterDto) {
+  async handleRegister(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
     const { email, password } = dto;
 
     // 1. Mã hoá mật khẩu bằng argon2id
@@ -62,6 +62,8 @@ export class AuthRepository {
       user,
       jwtService: this.jwtService,
       authSessionModel: this.authSessionModel,
+      ipAddress,
+      userAgent,
     });
 
     return {
@@ -89,7 +91,7 @@ export class AuthRepository {
    * @param password - Mật khẩu người dùng gửi lên để xác thực
    * @returns Access Token + Refresh Token nếu thành công, lỗi nếu thất bại
    */
-  async handleLogin(user: UserDocument, password: string) {
+  async handleLogin(user: UserDocument, password: string, ipAddress?: string, userAgent?: string) {
     // 1. Kiểm tra mật khẩu
     const userWithPassword = await this.userModel.findById(user._id).select('+password');
 
@@ -107,6 +109,8 @@ export class AuthRepository {
       user,
       jwtService: this.jwtService,
       authSessionModel: this.authSessionModel,
+      ipAddress,
+      userAgent,
     });
 
     // 7. Giới hạn tối đa 3 phiên hoạt động

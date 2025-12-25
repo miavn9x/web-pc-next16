@@ -2,6 +2,7 @@
 import {
   Body,
   Controller,
+  Headers,
   HttpCode,
   HttpStatus,
   Post,
@@ -49,9 +50,14 @@ export class AuthController {
   async register(
     @Body() dto: RegisterDto,
     @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result: StandardResponse<AuthResponse> = await this.authService.register(dto, ip);
+    const result: StandardResponse<AuthResponse> = await this.authService.register(
+      dto,
+      ip,
+      userAgent,
+    );
 
     const accessMaxAge = this.jwtService.getAccessExpiresInMs();
     const refreshMaxAge = this.jwtService.getRefreshExpiresInMs();
@@ -79,8 +85,13 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // Giới hạn 10 lần/phút cho đăng nhập
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() dto: LoginDto, @Ip() ip: string, @Res({ passthrough: true }) res: Response) {
-    const result: StandardResponse<AuthResponse> = await this.authService.login(dto, ip);
+  async login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result: StandardResponse<AuthResponse> = await this.authService.login(dto, ip, userAgent);
 
     const accessMaxAge = this.jwtService.getAccessExpiresInMs();
     const refreshMaxAge = this.jwtService.getRefreshExpiresInMs();

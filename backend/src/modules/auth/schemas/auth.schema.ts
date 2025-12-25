@@ -38,6 +38,15 @@ export class AuthSession {
   @Prop({ required: true, unique: true })
   refreshToken: string;
 
+  // --- Thông Tin Thiết Bị & Bảo Mật ---
+  // Địa chỉ IP của thiết bị đăng nhập (để theo dõi vị trí và phát hiện đăng nhập bất thường)
+  @Prop({ required: false })
+  ipAddress: string;
+
+  // User-Agent của trình duyệt/thiết bị (để nhận diện loại thiết bị: PC, Mobile, Tablet...)
+  @Prop({ required: false })
+  userAgent: string;
+
   // --- Thời Gian ---
   // Thời điểm người dùng đăng nhập
   @Prop({ required: true })

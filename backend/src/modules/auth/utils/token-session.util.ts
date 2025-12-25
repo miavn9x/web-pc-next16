@@ -10,12 +10,16 @@ interface CreateTokenSessionParams {
   authSessionModel: {
     create: (input: Partial<AuthSessionDocument>) => Promise<AuthSessionDocument>;
   };
+  ipAddress?: string; // Địa chỉ IP của người dùng
+  userAgent?: string; // User-Agent của trình duyệt
 }
 
 export async function createTokenAndSession({
   user,
   jwtService,
   authSessionModel,
+  ipAddress,
+  userAgent,
 }: CreateTokenSessionParams) {
   const sessionId = generateSessionId();
 
@@ -36,6 +40,8 @@ export async function createTokenAndSession({
     email: user.email,
     userId: user._id as Types.ObjectId,
     refreshToken,
+    ipAddress, // Lưu IP
+    userAgent, // Lưu User-Agent
     loginAt: now,
     lastRefreshedAt: now,
     expiresAt,

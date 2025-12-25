@@ -50,9 +50,13 @@ async function bootstrap() {
       if (allowedOrigins.includes(requestOrigin)) return callback(null, true);
 
       // Nếu KHÔNG PHẢI production, cho phép MỌI REQUEST để tiện testing (LAN, Tunnel, IP lạ...)
+      // QUAN TRỌNG: Khi dùng credentials, PHẢI trả về origin cụ thể (không được dùng '*')
       if (process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
+        return callback(null, requestOrigin); // ✅ Trả về chính xác origin của request
       }
+
+      // Production: Từ chối origin không nằm trong whitelist
+      return callback(new Error('CORS không cho phép origin này'));
     },
     credentials: true,
   });

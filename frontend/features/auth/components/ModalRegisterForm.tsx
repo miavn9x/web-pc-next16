@@ -27,10 +27,21 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     const [captchaInput, setCaptchaInput] = useState("");
     const [captchaImage, setCaptchaImage] = useState("");
     const [captchaId, setCaptchaId] = useState("");
+    const [isFetchingCaptcha, setIsFetchingCaptcha] = useState(false);
 
     // Lockout State
     const [localLockUntil, setLocalLockUntil] = useState<number | null>(null);
     const [now, setNow] = useState(Date.now());
+
+    // Refs for native validation
+    const emailRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
+    const captchaRef = useRef<HTMLInputElement>(null);
+    const firstNameRef = useRef<HTMLInputElement>(null);
+    const lastNameRef = useRef<HTMLInputElement>(null);
+
+    // Check local lock
+    const isLocked = localLockUntil !== null && now < localLockUntil;
 
     // Load from LocalStorage on mount
     useEffect(() => {
@@ -39,9 +50,6 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             if (storedLock) setLocalLockUntil(Number(storedLock));
         }
     }, []);
-
-    // Check local lock
-    const isLocked = localLockUntil !== null && now < localLockUntil;
 
     // Timer Effect
     useEffect(() => {
@@ -59,32 +67,32 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
         }
     }, [localLockUntil]);
 
-    // Refs for native validation
-    const emailRef = useRef<HTMLInputElement>(null);
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const captchaRef = useRef<HTMLInputElement>(null);
-    const firstNameRef = useRef<HTMLInputElement>(null);
-    const lastNameRef = useRef<HTMLInputElement>(null);
+    // Ref để tránh fetch 2 lần trong React Strict Mode
+    const hasFetched = useRef(false);
 
     const fetchCaptcha = async () => {
+        if (isFetchingCaptcha) return;
+        setIsFetchingCaptcha(true);
         try {
             const data = await getCaptcha();
             setCaptchaId(data.captchaId);
             setCaptchaImage(data.captchaImage);
         } catch (error: any) {
              if (error?.response?.status === 429) {
-                // If fetching captcha is throttled, it means user is locked
-                // We can't really get the lockUntil here easily without standardized error response for GET,
-                // but usually the main lock comes from POST. 
-                toast.error("Vui lòng đợi một chút trước khi thử lại.");
+                toast.error("Thao tác quá nhanh. Vui lòng đợi.");
             } else {
-                toast.error("Không thể tải mã xác nhận. Vui lòng thử lại.");
+                toast.error("Không thể tải mã xác nhận.");
             }
+        } finally {
+            setIsFetchingCaptcha(false);
         }
     };
 
     useEffect(() => {
-        fetchCaptcha();
+        if (!hasFetched.current) {
+            fetchCaptcha();
+            hasFetched.current = true;
+        }
 
         // DEV CHECK: Cảnh báo nếu đang chạy Tunnel/LAN mà API lại trỏ về localhost
         if (typeof window !== "undefined") {
@@ -107,6 +115,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     }, []);
 
     const handleRefreshCaptcha = () => {
+        if (isFetchingCaptcha) return;
         setCaptchaInput("");
         fetchCaptcha();
     };
@@ -388,8 +397,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                     </div>
                     <div className="flex items-center justify-center gap-3 w-full sm:w-auto order-1 sm:order-2">
                         <div 
-                          className="border border-gray-200 rounded p-1 bg-gray-50 select-none cursor-pointer min-w-[120px] min-h-[40px]"
-                          onClick={!isLocked ? handleRefreshCaptcha : undefined}
+                          className="border border-gray-200 rounded bg-gray-50 select-none cursor-pointer min-w-[110px] h-auto flex items-center justify-center [&>svg]:max-h-full [&>svg]:w-auto"
+                          onClick={!isLocked && !isFetchingCaptcha ? handleRefreshCaptcha : undefined}
                           title="Nhấn để đổi hình khác"
                           dangerouslySetInnerHTML={{ __html: captchaImage }}
                         />
@@ -400,8 +409,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                                 e.stopPropagation();
                                 handleRefreshCaptcha();
                             }}
-                            disabled={isLocked}
-                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isLocked || isFetchingCaptcha}
+                            className={`text-gray-500 p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isFetchingCaptcha ? 'animate-spin' : 'hover:text-gray-700 hover:bg-gray-100'}`}
                             title="Đổi mã khác"
                         >
                             <RefreshCw size={18} />
@@ -420,8 +429,6 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                  : "Đăng ký"}
             </button>
             
-
-
         </form>
         </>
     );

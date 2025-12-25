@@ -80,7 +80,7 @@ export class AuthService {
   /**
    * Xử lý đăng ký tài khoản mới cho người dùng
    */
-  async register(dto: RegisterDto, ip: string) {
+  async register(dto: RegisterDto, ip: string, userAgent?: string) {
     const { email, password, captchaId, captchaCode } = dto;
 
     // 0. Kiểm tra Rate Limit
@@ -124,14 +124,14 @@ export class AuthService {
     }
 
     // Uỷ quyền repository xử lý đăng ký
-    return this.authRepo.handleRegister(dto);
+    return this.authRepo.handleRegister(dto, ip, userAgent);
   }
 
   // --- Đăng Nhập Người Dùng ---
   /**
    * Xử lý đăng nhập người dùng và sinh token
    */
-  async login(dto: LoginDto, ip: string) {
+  async login(dto: LoginDto, ip: string, userAgent?: string) {
     const { email, password, captchaId, captchaCode } = dto;
 
     // 0. Kiểm tra Rate Limit (Khóa nếu sai quá nhiều theo IP + Email)
@@ -178,7 +178,7 @@ export class AuthService {
 
     // Uỷ quyền repository xử lý đăng nhập
     try {
-      const result = await this.authRepo.handleLogin(user, password);
+      const result = await this.authRepo.handleLogin(user, password, ip, userAgent);
 
       // Đăng nhập thành công -> Reset bộ đếm
       await this.authThrottler.reset(ip, email);

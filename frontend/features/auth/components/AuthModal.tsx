@@ -33,16 +33,9 @@ export const AuthModal = ({
     setLocalTab("login");
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={handleBackdropClick}
     >
       <div
         className="relative w-full max-w-[850px] bg-white rounded-lg shadow-2xl overflow-hidden flex min-h-[500px]"
@@ -52,7 +45,7 @@ export const AuthModal = ({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10"
         >
           <X size={20} />
         </button>

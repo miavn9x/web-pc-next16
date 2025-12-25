@@ -31,6 +31,7 @@
     "sharp": "^0.34.2",
     "slugify": "^1.6.6",
     "svg-captcha": "^1.4.0",
+    "ua-parser-js": "^2.0.7",
     "uuid": "^11.1.0"
   },
   "description": "Backend for Bánh Tráng Website, built with NestJS and MongoDB by W-Four Tech - trminhhieu",
@@ -51,6 +52,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
+    "@types/ua-parser-js": "^0.7.39",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",

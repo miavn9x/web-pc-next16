@@ -20,9 +20,12 @@ export function useRegister() {
         // Registration success
         return true;
       } else {
-        const msg = response.message || "Đăng ký thất bại";
-        setError(msg);
-        throw new Error(msg); // Throw loginal error to be caught by component
+        // Logic failure (errorCode present) but status 200
+        throw {
+          response: {
+            data: response,
+          },
+        };
       }
     } catch (err: any) {
       const msg =

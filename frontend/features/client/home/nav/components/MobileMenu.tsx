@@ -2,6 +2,7 @@ import MegaMenuContent from './MegaMenuContent';
 import { X, Menu, ChevronDown, User, Phone, MapPin, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { categories } from '../data/categories';
+import { useAuthModal } from '@/features/auth/shared/contexts/AuthModalContext';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface MobileMenuProps {
 }
 
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
+  const { openModal } = useAuthModal();
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
 
   if (!isOpen) return null;
@@ -66,7 +68,13 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
           </div>
           
            <div className="p-4 bg-gray-50 border-t border-gray-200 md:hidden">
-              <div className="flex items-center gap-3 mb-4 text-[#103E8F] font-semibold p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+              <div 
+                  className="flex items-center gap-3 mb-4 text-[#103E8F] font-semibold p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => {
+                      onClose(); // Close mobile menu
+                      openModal("login"); // Open auth modal
+                  }}
+              >
                   <div className="bg-blue-100 p-2 rounded-full"><User size={20} /></div>
                   <span>Đăng nhập / Đăng ký</span>
               </div>

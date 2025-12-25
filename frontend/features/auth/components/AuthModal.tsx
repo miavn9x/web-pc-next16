@@ -7,30 +7,28 @@ import { ModalLoginForm } from "./ModalLoginForm";
 import { ModalRegisterForm } from "./ModalRegisterForm";
 
 interface AuthModalProps {
-  initialTab?: "login" | "register";
+  activeTab: "login" | "register";
+  onSwitchTab: (tab: "login" | "register") => void;
   onClose: () => void;
 }
 
 export const AuthModal = ({
-  initialTab = "login",
+  activeTab,
+  onSwitchTab,
   onClose,
 }: AuthModalProps) => {
-  const [localTab, setLocalTab] = useState<"login" | "register">(initialTab);
-
-  useEffect(() => {
-    setLocalTab(initialTab);
-  }, [initialTab]);
+  // Removed local state to fix sync issues
 
   const switchToRegister = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setLocalTab("register");
+    onSwitchTab("register");
   };
 
   const switchToLogin = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setLocalTab("login");
+    onSwitchTab("login");
   };
 
   return (
@@ -57,7 +55,7 @@ export const AuthModal = ({
               Xin chào,
             </h2>
             <p className="text-sm text-gray-500">
-              {localTab === "login" ? (
+              {activeTab === "login" ? (
                 <>
                   Đăng nhập hoặc{" "}
                   <span
@@ -81,10 +79,10 @@ export const AuthModal = ({
             </p>
           </div>
 
-          {localTab === "login" ? (
+          {activeTab === "login" ? (
             <ModalLoginForm />
           ) : (
-            <ModalRegisterForm onSuccess={() => setLocalTab("login")} />
+            <ModalRegisterForm onSuccess={() => onSwitchTab("login")} />
           )}
         </div>
 

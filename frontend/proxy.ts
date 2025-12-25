@@ -22,30 +22,30 @@ export default function proxy(request: NextRequest) {
 
   // Protect Admin Routes
   if (pathname.startsWith("/wfourtech")) {
-    console.log("[PROXY DEBUG] Accessing /wfourtech");
-    console.log(
-      "[PROXY DEBUG] accessToken:",
-      accessToken ? "EXISTS" : "MISSING"
-    );
-    console.log(
-      "[PROXY DEBUG] refreshToken:",
-      refreshToken ? "EXISTS" : "MISSING"
-    );
+    // console.log("[PROXY DEBUG] Accessing /wfourtech");
+    // console.log(
+    //   "[PROXY DEBUG] accessToken:",
+    //   accessToken ? "EXISTS" : "MISSING"
+    // );
+    // console.log(
+    //   "[PROXY DEBUG] refreshToken:",
+    //   refreshToken ? "EXISTS" : "MISSING"
+    // );
 
     if (!accessToken) {
-      console.log("[PROXY DEBUG] No accessToken, checking refreshToken...");
+      // console.log("[PROXY DEBUG] No accessToken, checking refreshToken...");
       // If no access token but refresh token exists, let client handle refresh
       if (refreshToken) {
-        console.log("[PROXY DEBUG] Has refreshToken, allowing through");
+        // console.log("[PROXY DEBUG] Has refreshToken, allowing through");
         return NextResponse.next();
       }
-      console.log("[PROXY DEBUG] No tokens, redirecting to home");
+      // console.log("[PROXY DEBUG] No tokens, redirecting to home");
       return handleUnauthorized();
     }
 
     try {
       const payload = parseJwt(accessToken);
-      console.log("[PROXY DEBUG] JWT Payload:", payload);
+      // console.log("[PROXY DEBUG] JWT Payload:", payload);
       const allowedRoles = ["admin", "employment", "cskh"];
 
       // Check if user has at least one required role
@@ -54,16 +54,16 @@ export default function proxy(request: NextRequest) {
         Array.isArray(payload.roles) &&
         payload.roles.some((role: string) => allowedRoles.includes(role));
 
-      console.log("[PROXY DEBUG] Has required role:", hasRole);
+      // console.log("[PROXY DEBUG] Has required role:", hasRole);
 
       if (!hasRole) {
-        console.log("[PROXY DEBUG] Role check failed, redirecting");
+        // console.log("[PROXY DEBUG] Role check failed, redirecting");
         return handleUnauthorized();
       }
 
-      console.log("[PROXY DEBUG] All checks passed, allowing access");
+      // console.log("[PROXY DEBUG] All checks passed, allowing access");
     } catch (e) {
-      console.error("[PROXY DEBUG] JWT parse error:", e);
+      // console.error("[PROXY DEBUG] JWT parse error:", e);
       return handleUnauthorized();
     }
   }

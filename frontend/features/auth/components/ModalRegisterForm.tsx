@@ -12,13 +12,15 @@ interface ModalRegisterFormProps {
 }
 
 export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
-    const { closeModal } = useAuthModal();
+    const { closeModal, switchTab } = useAuthModal();
     const { register, error: registerError } = useRegister();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
         firstName: "",
-        lastName: ""
+        lastName: "",
+        phoneNumber: "",
+        address: ""
     });
     
     const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +41,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
     const captchaRef = useRef<HTMLInputElement>(null);
     const firstNameRef = useRef<HTMLInputElement>(null);
     const lastNameRef = useRef<HTMLInputElement>(null);
+    const phoneNumberRef = useRef<HTMLInputElement>(null);
+    const addressRef = useRef<HTMLInputElement>(null);
 
     // Check local lock
     const isLocked = localLockUntil !== null && now < localLockUntil;
@@ -133,6 +137,8 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             lastName: lastNameRef,
             email: emailRef,
             password: passwordRef,
+            phoneNumber: phoneNumberRef,
+            address: addressRef
         }[name];
 
         if (!ref?.current) return;
@@ -147,6 +153,11 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                      error = "Tên chỉ được chứa chữ cái và khoảng trắng.";
                 }
                 break;
+            case "phoneNumber":
+                 if (value && !/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(value)) {
+                    error = "Số điện thoại không hợp lệ.";
+                 }
+                 break;
             case "email":
                 const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
                 const emailDomain = value.split("@")[1]?.toLowerCase();
@@ -241,17 +252,22 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
+                phoneNumber: formData.phoneNumber,
+                address: formData.address,
                 captchaCode: captchaInput,
                 captchaId
             });
             
-            // Chỉ đóng modal/chuyển tab khi thực sự thành công (trả về true)
             if (success === true) {
                 // Clear lock on success
                 setLocalLockUntil(null);
                 localStorage.removeItem("register_lock_until");
                 
                 toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+
+                // Use context to switch tab globally
+                switchTab("login");
+
                 if (onSuccess) onSuccess();
             }
         } catch (error: any) {
@@ -298,10 +314,10 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                 -webkit-text-fill-color: #1f2937 !important;
             }
         `}</style>
-        <form className="flex flex-col gap-4 mt-2" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-2 " onSubmit={handleSubmit}>
             <div className="flex gap-4">
                 <div className="group flex-1">
-                    <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Họ</label>
+                    <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Họ</label>
                     <input 
                         ref={lastNameRef}
                         type="text"
@@ -310,13 +326,13 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         disabled={isLocked}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                 </div>
 
                 <div className="group flex-1">
-                    <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Tên</label>
+                    <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Tên</label>
                     <input 
                         ref={firstNameRef}
                         type="text"
@@ -325,14 +341,42 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         disabled={isLocked}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                 </div>
             </div>
 
             <div className="group">
-                <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Email</label>
+                <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Số điện thoại</label>
+                <input
+                    ref={phoneNumberRef}
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={isLocked}
+                    className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+            </div>
+
+            <div className="group">
+                <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Địa chỉ</label>
+                <input
+                    ref={addressRef}
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={isLocked}
+                    className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+            </div>
+
+            <div className="group">
+                <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Email</label>
                 <input
                     ref={emailRef}
                     type="email"
@@ -341,13 +385,13 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     disabled={isLocked}
-                    className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                 />
             </div>
 
             <div className="group">
-                <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">Mật khẩu</label>
+                <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">Mật khẩu</label>
                 <div className="relative">
                     <input
                         ref={passwordRef}
@@ -357,7 +401,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         disabled={isLocked}
-                        className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
                     />
                      <button
@@ -376,7 +420,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             </div>
 
             <div className="group">
-                <label className="block text-[15px] font-bold text-gray-400 mb-1 group-focus-within:text-gray-600 transition-colors">
+                <label className="block text-[15px] font-bold text-gray-400 group-focus-within:text-gray-600 transition-colors">
                   Mã xác nhận
                 </label>
                 <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -390,7 +434,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
                                 e.target.setCustomValidity("");
                             }}
                             disabled={isLocked}
-                            className="w-full border-b-[1.5px] border-gray-300 py-1.5 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 text-center sm:text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full border-b-[1.5px] border-gray-300 py-1 focus:outline-none focus:border-[#E31D1C] transition-colors placeholder-gray-400 text-gray-800 text-center sm:text-left disabled:opacity-50 disabled:cursor-not-allowed"
                             required
                             placeholder="Nhập mã xác nhận"
                           />
@@ -422,7 +466,7 @@ export const ModalRegisterForm = ({ onSuccess }: ModalRegisterFormProps) => {
             <button
                 type="submit"
                 disabled={isLocked}
-                className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-3 rounded text-[16px] transition-all shadow-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#E31D1C] hover:bg-[#c91918] text-white font-bold py-2 rounded text-[16px] transition-all shadow-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLocked 
                  ? `Tạm khóa (${Math.ceil((localLockUntil! - now) / 1000)}s)`

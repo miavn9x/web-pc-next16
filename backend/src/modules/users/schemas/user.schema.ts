@@ -30,11 +30,29 @@ export class User {
   @Prop({ required: true, unique: true, index: true })
   email: string;
 
+  @Prop()
+  firstName: string;
+
+  @Prop()
+  lastName: string;
+
+  @Prop()
+  phoneNumber: string;
+
+  @Prop()
+  address: string;
+
   // --- Xác Thực & Truy Cập ---
   // Các trường liên quan đến xác thực tài khoản và hoạt động đăng nhập
 
   @Prop({ default: null })
   lastLoginAt: Date;
+
+  @Prop({ required: false })
+  registrationIp: string;
+
+  @Prop({ required: false })
+  registrationUserAgent: string;
 
   // --- Bảo Mật ---
   // Mật khẩu được mã hóa để bảo vệ tài khoản người dùng

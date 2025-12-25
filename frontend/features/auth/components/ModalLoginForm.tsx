@@ -40,7 +40,7 @@ export const ModalLoginForm = () => {
             setCaptchaId(data.captchaId);
             setCaptchaImage(data.captchaImage);
         } catch (error: any) {
-            console.error("Failed to fetch captcha", error);
+            // console.error("Failed to fetch captcha", error);
             if (error?.response?.status === 429) {
                 toast.error("Thao tác quá nhanh. Vui lòng đợi!");
             } else {
@@ -173,7 +173,18 @@ export const ModalLoginForm = () => {
 
         try {
             // Gửi captcha code và id lên server để check
-            await login({ email, password, captchaCode: captchaInput, captchaId });
+            const res = await login({ email, password, captchaCode: captchaInput, captchaId });
+            
+            // 2024 Fix: Backend now returns 200 OK with errorCode for Logic Errors (to hide 401 logs)
+            // So we must check errorCode manually here if axios doesn't throw.
+             if (res && (res as any).errorCode) {
+                // Manually throw to trigger catch block with formatted error
+                 throw { 
+                    response: { 
+                        data: res 
+                    }
+                };
+            }
 
             // Thành công -> Xóa lock nếu có (logic local)
             setLocalLockUntil(null);

@@ -8,6 +8,7 @@ import "../shared/styles/globals.css";
 import { AuthModalProvider } from "@/features/auth/shared/contexts/AuthModalContext";
 import { AuthModalWrapper } from "@/features/auth/components/AuthModalWrapper";
 import { Suspense } from "react";
+import BackToTop from "@/shared/backtotop/BackToTop";
 
 /** ✅ Chuyển themeColor sang viewport (chuẩn Next 15) */
 export const viewport: Viewport = {
@@ -49,6 +50,7 @@ export default async function RootLayout({
           {/* <NavigationMenu /> */}
           <main>{children}</main>
           {/* <Footer /> */}
+          <BackToTop />
         </AuthModalProvider>
       </body>
     </html>

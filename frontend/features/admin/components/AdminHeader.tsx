@@ -76,7 +76,7 @@ const AdminHeader = () => {
               alt="W FOUR TECH"
               width={isMobile ? 180 : 220}
               height={40}
-              className="h-auto max-w-[180px] sm:max-w-[220px] relative z-10001"
+              className="w-auto h-auto max-w-[180px] sm:max-w-[220px] relative z-10001"
             />
           ) : (
             <div className="w-10 h-10 flex items-center justify-center relative z-10001">

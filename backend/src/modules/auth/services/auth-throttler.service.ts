@@ -1,5 +1,5 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 
 @Injectable()
@@ -26,7 +26,10 @@ export class AuthThrottlerService {
   /**
    * Kiểm tra xem user (từ IP này) có bị khóa không
    */
-  async checkLimit(ip: string, email: string): Promise<void> {
+  async checkLimit(
+    ip: string,
+    email: string,
+  ): Promise<{ locked: boolean; message?: string; errorCode?: string; lockUntil?: number }> {
     const lockKey = this.getLockKey(ip, email);
     const lockExpiresAt = await this.cacheManager.get<number>(lockKey);
 
@@ -41,14 +44,12 @@ export class AuthThrottlerService {
         const minutes = Math.floor(remainingSeconds / 60);
         const seconds = remainingSeconds % 60;
 
-        throw new HttpException(
-          {
-            message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
-            errorCode: 'AUTH_LOCKED',
-            lockUntil: lockExpiresAt,
-          },
-          HttpStatus.FORBIDDEN, // 403 Forbidden
-        );
+        return {
+          locked: true,
+          message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
+          errorCode: 'AUTH_LOCKED',
+          lockUntil: lockExpiresAt,
+        };
       }
     }
 
@@ -73,15 +74,15 @@ export class AuthThrottlerService {
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
 
-      throw new HttpException(
-        {
-          message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
-          errorCode: 'AUTH_LOCKED',
-          lockUntil: lockUntil,
-        },
-        HttpStatus.FORBIDDEN, // 403 Forbidden
-      );
+      return {
+        locked: true,
+        message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
+        errorCode: 'AUTH_LOCKED',
+        lockUntil: lockUntil,
+      };
     }
+
+    return { locked: false };
   }
 
   /**

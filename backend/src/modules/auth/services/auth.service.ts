@@ -85,7 +85,17 @@ export class AuthService {
 
     // 0. Kiểm tra Rate Limit
     console.log(`[DEBUG] Register Check - IP: ${ip}, Email: ${email}`);
-    await this.authThrottler.checkLimit(ip, email);
+    const throttleCheck = await this.authThrottler.checkLimit(ip, email);
+    if (throttleCheck.locked) {
+      return {
+        message: throttleCheck.message || 'Tài khoản bị khóa.',
+        data: null,
+        errorCode: throttleCheck.errorCode || 'AUTH_LOCKED',
+        // Pass extra data if needed, but currently StandardResponse structure is fixed.
+        // We might need to embed lockUntil in message or extend response type?
+        // For now, let's just return the error code which frontend handles.
+      };
+    }
 
     // 0.1 Validate Captcha Server-Side
     const isCaptchaValid = await this.validateCaptcha(captchaId, captchaCode);
@@ -94,7 +104,11 @@ export class AuthService {
     if (!isCaptchaValid) {
       console.log(`[DEBUG] Incrementing Rate Limit for IP: ${ip}`);
       await this.authThrottler.increment(ip, email);
-      throw new UnauthorizedException('Mã xác nhận không chính xác hoặc đã hết hạn');
+      return {
+        message: 'Mã xác nhận không chính xác hoặc đã hết hạn',
+        data: null,
+        errorCode: AuthErrorCode.INVALID_CAPTCHA || 'INVALID_CAPTCHA',
+      };
     }
 
     // Kiểm tra định dạng email và kiểm tra trùng
@@ -135,14 +149,26 @@ export class AuthService {
     const { email, password, captchaId, captchaCode } = dto;
 
     // 0. Kiểm tra Rate Limit (Khóa nếu sai quá nhiều theo IP + Email)
-    await this.authThrottler.checkLimit(ip, email);
+    const throttleCheck = await this.authThrottler.checkLimit(ip, email);
+    if (throttleCheck.locked) {
+      // Return 200 with error details
+      return {
+        message: throttleCheck.message || 'Tài khoản tạm thời bị khóa.',
+        data: null,
+        errorCode: throttleCheck.errorCode || 'AUTH_LOCKED',
+      };
+    }
 
     // 0.1 Validate Captcha Server-Side
     const isCaptchaValid = await this.validateCaptcha(captchaId, captchaCode);
     if (!isCaptchaValid) {
       // Nhập sai Captcha -> Tăng đếm lỗi ngay lập tức
       await this.authThrottler.increment(ip, email);
-      throw new UnauthorizedException('Mã xác nhận không chính xác hoặc đã hết hạn');
+      return {
+        message: 'Mã xác nhận không chính xác hoặc đã hết hạn',
+        data: null,
+        errorCode: AuthErrorCode.INVALID_CAPTCHA || 'INVALID_CAPTCHA',
+      };
     }
 
     // Kiểm tra định dạng email hợp lệ
@@ -184,10 +210,16 @@ export class AuthService {
       await this.authThrottler.reset(ip, email);
 
       return result;
-    } catch (error) {
+    } catch {
       // Nếu đăng nhập thất bại (sai pass - có exception) -> Tăng số lần sai
       await this.authThrottler.increment(ip, email);
-      throw error;
+
+      // Instead of throwing, catch and return error
+      return {
+        message: 'Thông tin đăng nhập không chính xác', // Generic message for security
+        data: null,
+        errorCode: AuthErrorCode.INVALID_CREDENTIALS,
+      };
     }
   }
 

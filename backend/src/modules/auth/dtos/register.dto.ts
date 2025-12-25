@@ -1,5 +1,5 @@
 // --- Import Thư Viện ---
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 
 // --- DTO Đăng Ký Người Dùng ---
 export class RegisterDto {
@@ -27,4 +27,28 @@ export class RegisterDto {
    */
   @IsNotEmpty({ message: 'Mã xác nhận không được để trống' })
   captchaCode: string;
+
+  /**
+   * Họ người dùng
+   */
+  @IsNotEmpty({ message: 'Họ không được để trống' })
+  lastName: string;
+
+  /**
+   * Tên người dùng
+   */
+  @IsNotEmpty({ message: 'Tên không được để trống' })
+  firstName: string;
+
+  /**
+   * Số điện thoại (Tùy chọn)
+   */
+  @IsOptional()
+  phoneNumber?: string;
+
+  /**
+   * Địa chỉ (Tùy chọn)
+   */
+  @IsOptional()
+  address?: string;
 }

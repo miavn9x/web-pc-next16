@@ -38,6 +38,9 @@ async function bootstrap() {
         'http://localhost:3000',
         'http://demobanhtrang.wfourtech.vn',
         'https://demobanhtrang.wfourtech.vn',
+        // [PRODUCTION] Bỏ comment khi lên VPS
+        // 'https://miavn9x.id.vn',
+        // 'https://www.miavn9x.id.vn',
       ];
 
       // Cho phép request không có origin (như server-to-server, postman, mobile app)

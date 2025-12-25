@@ -52,16 +52,6 @@ const nextConfig: NextConfig = {
     "*.devtunnels.ms",
     "*.ngrok-free.app",
   ],
-  // PROXY: Giải quyết vấn đề Mixed Content (HTTPS -> HTTP) cho thiết bị di động
-  async rewrites() {
-    return [
-      {
-        source: "/api-proxy/:path*",
-        destination: "http://192.168.1.9:4000/api/:path*", // [DEV] Proxy về Backend LAN
-        // destination: "https://miavn9x.id.vn/api/:path*", // [PROD] Sau này có VPS thì mở dòng này
-      },
-    ];
-  },
 };
 
 export default nextConfig;

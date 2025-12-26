@@ -187,6 +187,7 @@ export class AuthRepository {
   async refreshTokens(sessionId: string) {
     const session = await this.authSessionModel.findOne({
       sessionId,
+      isExpired: false, // Chặn refresh token nếu session đã logout
     });
     if (!session || session.expiresAt < new Date()) {
       return {

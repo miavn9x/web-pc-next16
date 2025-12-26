@@ -18,30 +18,30 @@ export async function verifyAdminAccess(): Promise<boolean> {
       return false;
     }
 
-    // 2. Nếu có accessToken, kiểm tra Role
+    // 2. Nếu có accessToken, kiểm tra Role bằng cách parse (không verify chữ ký)
+    // Đơn giản hóa theo yêu cầu để tránh phức tạp config env
     if (accessToken) {
-      const payload = parseJwt(accessToken);
+      try {
+        const payload = parseJwt(accessToken);
 
-      if (!payload || !payload.roles || !Array.isArray(payload.roles)) {
-        return false;
+        if (!payload || !payload.roles || !Array.isArray(payload.roles)) {
+          return false;
+        }
+
+        const hasPermission = payload.roles.some((role: string) =>
+          ALLOWED_ADMIN_ROLES.includes(role)
+        );
+
+        return hasPermission;
+      } catch (e) {
+        return false; // Parse lỗi -> Token đểu
       }
-
-      // Kiểm tra xem có role nào trong danh sách cho phép không
-      const hasPermission = payload.roles.some((role: string) =>
-        ALLOWED_ADMIN_ROLES.includes(role)
-      );
-
-      return hasPermission;
     }
 
-    // 3. Nếu chỉ có refreshToken (accessToken hết hạn),
-    // ta tạm thời cho qua để Client tự lo việc refresh token (hoặc middleware xử lý).
-    // Nhưng để an toàn cho layout server, nếu logic refresh chưa chặt, ta có thể chặn luôn.
-    // Theo code cũ của bạn: if (!accessToken && !refreshToken) -> return null.
-    // Nghĩa là nếu có RefreshToken thì vẫn render layout.
+    // 3. Fallback cho Refresh Token
     return true;
   } catch (error) {
-    console.error("Admin Access Verification Failed:", error);
+    console.error("Admin Access Verification Error:", error);
     return false;
   }
 }

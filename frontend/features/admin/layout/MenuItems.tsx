@@ -196,11 +196,8 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
 
   const handleItemClick = (item: MenuItem) => {
     if (item.isWebLink && item.href) {
-      if (item.href.startsWith("/")) {
-         window.location.href = item.href;
-      } else {
-         window.open(item.href, "_blank");
-      }
+      window.open(item.href, "_blank");
+      return;
     } else if (item.hasSubmenu) {
       // Nếu sidebar đang đóng và không phải mobile
       if (!isSidebarOpen && !isMobile) {

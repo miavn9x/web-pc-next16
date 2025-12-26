@@ -31,8 +31,8 @@ export default async function AdminLayout({
   const hasAccess = await verifyAdminAccess();
 
   if (!hasAccess) {
-    // Nếu không có quyền, đá thẳng về trang đăng nhập
-    redirect("/auth/login");
+    // Nếu không có quyền, đá về trang chủ
+    redirect("/");
   }
 
   return (

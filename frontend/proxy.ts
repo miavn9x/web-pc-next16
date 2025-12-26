@@ -22,24 +22,10 @@ export default function proxy(request: NextRequest) {
 
   // Protect Admin Routes
   if (pathname.startsWith("/wfourtech")) {
-    // console.log("[PROXY DEBUG] Accessing /wfourtech");
-    // console.log(
-    //   "[PROXY DEBUG] accessToken:",
-    //   accessToken ? "EXISTS" : "MISSING"
-    // );
-    // console.log(
-    //   "[PROXY DEBUG] refreshToken:",
-    //   refreshToken ? "EXISTS" : "MISSING"
-    // );
-
     if (!accessToken) {
-      // console.log("[PROXY DEBUG] No accessToken, checking refreshToken...");
-      // If no access token but refresh token exists, let client handle refresh
       if (refreshToken) {
-        // console.log("[PROXY DEBUG] Has refreshToken, allowing through");
         return NextResponse.next();
       }
-      // console.log("[PROXY DEBUG] No tokens, redirecting to home");
       return handleUnauthorized();
     }
 

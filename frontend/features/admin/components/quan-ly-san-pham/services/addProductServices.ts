@@ -3,9 +3,9 @@ import type {
   ProductFormData,
   Variant,
   Media,
-} from "../../types/product/addProduct.Types";
-import { mediaService } from "@/features/admin/services/media/adminMedia";
-import { MediaUsageEnum } from "@/features/admin/types/media/adminMedia.types";
+} from "../types/addProduct.Types";
+import { mediaService } from "@/features/admin/components/media/services/adminMedia";
+import { MediaUsageEnum } from "@/features/admin/components/media/types/adminMedia.types";
 import axiosInstance from "@/shared/lib/axios"; // Import axiosInstance
 import axios from "axios"; // Import axios for type checking AxiosError
 

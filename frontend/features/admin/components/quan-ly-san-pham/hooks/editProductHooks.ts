@@ -1,14 +1,14 @@
 "use client";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
-import { Variant, Media } from "../../types/product/addProduct.Types";
+import { Variant, Media } from "../types/addProduct.Types";
 import {
   getProductByCode,
   updateProduct,
-} from "../../services/product/editProductServices";
-import { useAdminMedia } from "@/features/admin/hooks/media/useAdminMedia";
-import { MediaUsageEnum } from "@/features/admin/types/media/adminMedia.types";
-import { ProductFormData } from "../../types/product/editProduct.Types";
+} from "../services/editProductServices";
+import { useAdminMedia } from "@/features/admin/components/media/hooks/useAdminMedia";
+import { MediaUsageEnum } from "@/features/admin/components/media/types/adminMedia.types";
+import { ProductFormData } from "../types/editProduct.Types";
 
 interface FormVariant extends Variant {
   formId: string;
@@ -350,7 +350,7 @@ export const useEditProduct = (productCode: string) => {
       for (const mediaCode of mediaToDelete) {
         try {
           await hardDelete(mediaCode);
-        } catch  {
+        } catch {
           // Tiếp tục xử lý dù có lỗi xóa media
         }
       }

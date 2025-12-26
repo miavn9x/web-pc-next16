@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // Import hooks thật
-import { useOrders, useOrderDetail } from "../../hooks/hooksOrders/orders";
+import { useOrders, useOrderDetail } from "./hooks/orders";
 import { useNotification } from "../../contexts/NotificationContext";
 
 // Type definitions

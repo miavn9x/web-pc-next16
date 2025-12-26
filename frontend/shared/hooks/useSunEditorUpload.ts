@@ -1,7 +1,7 @@
 "use client";
 import { useCallback } from "react";
-import { mediaService } from "@/features/admin/services/media/adminMedia";
-import { MediaUsageEnum } from "@/features/admin/types/media/adminMedia.types";
+import { mediaService } from "@/features/admin/components/media/services/adminMedia";
+import { MediaUsageEnum } from "@/features/admin/components/media/types/adminMedia.types";
 
 export function useSunEditorUpload() {
   const handleImageUpload = useCallback(
@@ -24,7 +24,6 @@ export function useSunEditorUpload() {
         } catch (e) {
           // Nếu URL không phải là URL tuyệt đối hợp lệ (ví dụ: đã là đường dẫn tương đối),
           // chúng ta giả định nó đã ở định dạng tương đối mong muốn.
-     
         }
 
         return url; // Trả về đường dẫn tương đối

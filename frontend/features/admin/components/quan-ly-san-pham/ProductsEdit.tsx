@@ -10,7 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import QuillWrapper from "./quill-wrapper";
 import "node_modules/quill/dist/quill.snow.css";
 import "quill/dist/quill.snow.css";
-import { useEditProduct } from "../../hooks/product/editProductHooks";
+import { useEditProduct } from "./hooks/editProductHooks";
 import type Quill from "quill";
 
 interface ProductsEditProps {

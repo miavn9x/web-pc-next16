@@ -3,7 +3,7 @@ import type {
   ApiResponse,
   Product,
   ProductDetail,
-} from "../../types/product/listProduct.Types";
+} from "../types/listProduct.Types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL;
 

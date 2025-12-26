@@ -11,13 +11,13 @@ import {
   Save,
   Image as ImageIcon,
 } from "lucide-react";
-import { useAdvertisement } from "../../hooks/advertisement/useAdvertisement";
-import { useAdminMedia } from "../../hooks/media/useAdminMedia";
+import { useAdvertisement } from "./hooks/useAdvertisement";
+import { useAdminMedia } from "../media/hooks/useAdminMedia";
 import {
   AdvertisementPosition,
   Advertisement,
-} from "../../services/advertisement/advertisementService";
-import { MediaUsageEnum } from "../../types/media/adminMedia.types";
+} from "./services/advertisementService";
+import { MediaUsageEnum } from "../media/types/adminMedia.types";
 
 // Interface cho form state của từng slot
 interface AdFormState {

@@ -7,12 +7,12 @@ import {
   getProductsByCategory,
   getProductDetail,
   deleteProduct,
-} from "../../services/product/listProductServices";
+} from "../services/listProductServices";
 import type {
   Product,
   ProductDetail,
   ProductVariant,
-} from "../../types/product/listProduct.Types";
+} from "../types/listProduct.Types";
 
 // Kiểu thông tin phân trang
 interface PaginationInfo {

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Tag, Globe, Percent, Calendar, DollarSign, Type, CheckCircle } from "lucide-react";
-import { couponService, Coupon } from "../../services/coupon/servicesCoupons";
+import { couponService, Coupon } from "./services/servicesCoupons";
 
 interface CouponsAddProps {
   onBack: () => void;

@@ -19,7 +19,7 @@ import {
   usePosts,
   type Post,
   type MediaCover,
-} from "@/features/admin/components/quan-ly-noi-dung/hooksPost/usePosts";
+} from "@/features/admin/components/quan-ly-noi-dung/hooks/usePosts";
 
 interface PostFormData {
   title: string;

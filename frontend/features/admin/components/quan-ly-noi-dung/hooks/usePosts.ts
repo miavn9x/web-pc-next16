@@ -7,9 +7,9 @@ import {
   type Post,
   type PostListItem,
   type MediaCover,
-} from "@/features/admin/components/quan-ly-noi-dung/servicsePost/postService";
-import { useAdminMedia } from "@/features/admin/hooks/media/useAdminMedia";
-import { MediaUsageEnum } from "@/features/admin/types/media/adminMedia.types";
+} from "@/features/admin/components/quan-ly-noi-dung/services/postService";
+import { useAdminMedia } from "@/features/admin/components/media/hooks/useAdminMedia";
+import { MediaUsageEnum } from "@/features/admin/components/media/types/adminMedia.types";
 
 interface UsePostsReturn {
   posts: PostListItem[];

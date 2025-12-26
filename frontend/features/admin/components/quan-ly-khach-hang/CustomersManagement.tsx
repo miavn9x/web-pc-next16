@@ -12,7 +12,7 @@ import {
   ChevronRight,
   RefreshCw
 } from "lucide-react";
-import { ordersService, CustomerStat } from "../../services/servicesOrders/Orders";
+import { ordersService, CustomerStat } from "../quan-ly-don-hang/services/Orders";
 
 type Locale = 'vi' | 'ja';
 

@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import QuillWrapper from "./quill-wrapper";
 import "quill/dist/quill.snow.css";
 import Image from "next/image";
-import { useAddProduct } from "../../hooks/product/addProductHooks";
+import { useAddProduct } from "./hooks/addProductHooks";
 import type Quill from "quill";
 
 const ProductsAdd = () => {

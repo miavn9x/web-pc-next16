@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useAdminPage } from "@/features/admin/contexts/AdminPageContext";
-import { usePosts } from "@/features/admin/components/quan-ly-noi-dung/hooksPost/usePosts";
+import { usePosts } from "@/features/admin/components/quan-ly-noi-dung/hooks/usePosts";
 
 const t = {
   postsList: "Danh sách bài viết",

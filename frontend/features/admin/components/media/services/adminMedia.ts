@@ -1,6 +1,6 @@
 // TUYỆT ĐỐI KHÔNG SỬA CODE NAY
 
-import { MediaUsageEnum } from "../../types/media/adminMedia.types";
+import { MediaUsageEnum } from "../types/adminMedia.types";
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/media`;
 

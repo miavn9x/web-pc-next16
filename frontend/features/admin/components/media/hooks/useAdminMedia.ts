@@ -1,7 +1,7 @@
 // TUYỆT ĐỐI KHÔNG SỬA CODE NAY
 
-import { mediaService } from "@/features/admin/services/media/adminMedia";
-import { MediaUsageEnum } from "../../types/media/adminMedia.types";
+import { mediaService } from "@/features/admin/components/media/services/adminMedia";
+import { MediaUsageEnum } from "../types/adminMedia.types";
 import { useCallback, useState } from "react";
 
 type MediaResponse<T = any> = {

@@ -5,7 +5,7 @@ import {
   CreateAdvertisementDto,
   UpdateAdvertisementDto,
   AdvertisementPosition,
-} from "../../services/advertisement/advertisementService";
+} from "../services/advertisementService";
 
 export const useAdvertisement = () => {
   const [ads, setAds] = useState<Advertisement[]>([]);

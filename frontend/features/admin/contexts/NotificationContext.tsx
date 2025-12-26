@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { ordersService } from '../services/servicesOrders/Orders';
+import { ordersService } from '../components/quan-ly-don-hang/services/Orders';
 
 interface NotificationContextType {
   pendingOrdersCount: number;

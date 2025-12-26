@@ -1,11 +1,8 @@
 "use client";
 import React, { useRef } from "react";
 import { toast } from "react-toastify";
-import type {
-  ProductFormData,
-  Variant,
-} from "../../types/product/addProduct.Types"; // Corrected import path
-import { submitProductData } from "../../services/product/addProductServices"; // Corrected import path
+import type { ProductFormData, Variant } from "../types/addProduct.Types"; // Corrected import path
+import { submitProductData } from "../services/addProductServices"; // Corrected import path
 
 /**
  * Hook chính quản lý trạng thái và logic thêm sản phẩm

@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useProductsList } from "../../hooks/product/listProductHooks";
+import { useProductsList } from "./hooks/listProductHooks";
 
 interface ProductsListProps {
   onEdit: (_productCode: string, _language?: string) => void;

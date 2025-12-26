@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Copy, Check } from "lucide-react";
-import { couponService, Coupon } from "../../services/coupon/servicesCoupons";
+import { couponService, Coupon } from "./services/servicesCoupons";
 
 interface CouponsListProps {
   onAdd: () => void;

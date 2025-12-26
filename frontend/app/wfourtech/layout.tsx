@@ -11,7 +11,9 @@ import { AdminClientWrapper } from "@/shared/components/AdminClientWrapper";
 import QueryProvider from "@/shared/components/QueryProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { cookies } from "next/headers";
+
+export const dynamic = "force-dynamic"; // Fix build error: Route used cookies
+
 import { redirect } from "next/navigation";
 import { verifyAdminAccess } from "@/features/admin/lib/admin-guard";
 
@@ -37,20 +39,20 @@ export default async function AdminLayout({
 
   return (
     <>
-        <AdminClientWrapper>
-          <QueryProvider>
-            <SidebarProvider>
-              <NotificationProvider>
-                <AdminPageProvider>
-                  <div className="h-screen flex flex-col overflow-hidden">
-                    {children}
-                  </div>
-                  <ToastContainer />
-                </AdminPageProvider>
-              </NotificationProvider>
-            </SidebarProvider>
-          </QueryProvider>
-        </AdminClientWrapper>
+      <AdminClientWrapper>
+        <QueryProvider>
+          <SidebarProvider>
+            <NotificationProvider>
+              <AdminPageProvider>
+                <div className="h-screen flex flex-col overflow-hidden">
+                  {children}
+                </div>
+                <ToastContainer />
+              </AdminPageProvider>
+            </NotificationProvider>
+          </SidebarProvider>
+        </QueryProvider>
+      </AdminClientWrapper>
     </>
   );
 }

@@ -57,7 +57,7 @@ export class User {
   // --- Bảo Mật ---
   // Mật khẩu được mã hóa để bảo vệ tài khoản người dùng
   // select: false để không trả về trường này trong các truy vấn mặc định, tăng cường bảo mật
-  @Prop({ required: true })
+  @Prop({ required: true, select: false })
   password: string;
 
   // --- Thời Gian Tạo & Cập Nhật ---

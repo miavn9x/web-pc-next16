@@ -1,16 +1,24 @@
-import { Component, Cpu, HardDrive, Wrench, Monitor, Mouse, Network, Camera } from 'lucide-react';
+import {
+  Monitor,
+  Cpu,
+  CircuitBoard,
+  HardDrive,
+  Zap,
+  CreditCard,
+} from "lucide-react";
 
 export const categories = [
-    { name: "Linh kiện máy tính", icon: <Component size={20} /> },
-    { name: "CPU, Mainboard, VGA", icon: <Cpu size={20} /> },
-    { name: "RAM, SSD, HDD", icon: <HardDrive size={20} /> },
-    { name: "Case, Tản, Nguồn", icon: <Wrench size={20} /> },
-    { name: "PC Gaming, Đồ Họa, AI", icon: <Monitor size={20} /> },
-    { name: "PC văn phòng - doanh nghiệp", icon: <Monitor size={20} /> },
-    { name: "Laptop", icon: <Monitor size={20} /> },
-    { name: "Màn hình, Tivi, Máy chiếu", icon: <Monitor size={20} /> },
-    { name: "Phím, chuột, tai nghe", icon: <Mouse size={20} /> },
-    { name: "Thiết bị mạng", icon: <Network size={20} /> },
-    { name: "Thiết bị âm thanh", icon: <Network size={20} /> },
-    { name: "Camera, webcam, thẻ nhớ", icon: <Camera size={20} /> },
+  // PC Types
+  { name: "PC - Máy Tính Bộ", icon: <Monitor size={20} /> },
+
+  // Components (Linh kiện)
+  { name: "CPU - Bộ Vi Xử Lý", icon: <Cpu size={20} /> },
+  { name: "Mainboard - Bo Mạch Chủ", icon: <CircuitBoard size={20} /> },
+  { name: "VGA - Card Màn Hình", icon: <CreditCard size={20} /> },
+  { name: "RAM - Bộ Nhớ Trong", icon: <HardDrive size={20} /> },
+  { name: "Ổ Cứng HDD, SSD", icon: <HardDrive size={20} /> },
+  { name: "PSU - Nguồn Máy Tính", icon: <Zap size={20} /> },
+
+  // Accessories
+  { name: "Màn Hình", icon: <Monitor size={20} /> },
 ];

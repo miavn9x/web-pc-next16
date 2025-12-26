@@ -2,6 +2,7 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 // --- Import Cấu Hình Ứng Dụng ---
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -23,6 +24,22 @@ async function bootstrap() {
 
   // Khởi tạo NestJS app với module gốc
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // --- Security Headers với Helmet ---
+  // Backend chỉ serve JSON API → Không cần CSP phức tạp
+  // CSP chỉ quan trọng cho frontend serve HTML
+  app.use(
+    helmet({
+      // Tắt CSP vì backend API không serve HTML
+      contentSecurityPolicy: false,
+
+      // Giữ các headers bảo mật quan trọng khác:
+      // - X-Frame-Options: SAMEORIGIN (chống clickjacking)
+      // - X-Content-Type-Options: nosniff (chống MIME sniffing)
+      // - Strict-Transport-Security (bắt buộc HTTPS)
+      // - X-XSS-Protection: 1; mode=block
+    }),
+  );
 
   // Đăng ký middleware cookie-parser để có thể đọc refreshToken từ HttpOnly Cookie
   app.use(cookieParser());

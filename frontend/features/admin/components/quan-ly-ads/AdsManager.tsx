@@ -6,10 +6,11 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Link as LinkIcon,
   RefreshCw,
-  Save,
+  Plus,
   Image as ImageIcon,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { useAdvertisement } from "./hooks/useAdvertisement";
 import { useAdminMedia } from "../media/hooks/useAdminMedia";
@@ -19,79 +20,60 @@ import {
 } from "./services/advertisementService";
 import { MediaUsageEnum } from "../media/types/adminMedia.types";
 
-// Interface cho form state của từng slot
+// Helper to get full image URL
+const getFullImageUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("blob:")) return url;
+  // Assumes NEXT_PUBLIC_API_URL is like 'http://localhost:5000/api'
+  // We need to strip '/api' to get the base host, or adjust based on your actual env.
+  // If the backend serves static files at root, we just need the domain.
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
+    "http://localhost:4000";
+  return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 interface AdFormState {
   mediaCode: string;
   url: string;
-  link: string;
-  isActive: boolean;
-  isDirty: boolean; // Để hiện nút Save khi có thay đổi chưa lưu
 }
 
-// Component hiển thị một Slot Quảng Cáo
-const AdSlotCard = ({
-  title,
+// --- Component: Form thêm quảng cáo mới ---
+const NewAdForm = ({
   position,
-  currentAd,
-  onSave,
-  onDelete,
-  onToggleActive,
+  onCancel,
+  onSuccess,
 }: {
-  title: string;
   position: AdvertisementPosition;
-  currentAd: Advertisement | null;
-  onSave: (position: AdvertisementPosition, data: { mediaCode: string; url: string; link: string; isActive: boolean }) => void;
-  onDelete: (code: string) => void;
-  onToggleActive: (code: string, currentStatus: boolean) => void;
+  onCancel: () => void;
+  onSuccess: () => void;
 }) => {
   const { uploadSingle, uploadSingleState } = useAdminMedia();
-  const isUploading = uploadSingleState.isLoading;
-  
-  // Local state để edit
+  const { createAd, loading: creating } = useAdvertisement();
   const [formData, setFormData] = useState<AdFormState>({
     mediaCode: "",
     url: "",
-    link: "",
-    isActive: true,
-    isDirty: false,
   });
 
-  // Sync state với currentAd khi nó thay đổi
-  useEffect(() => {
-    if (currentAd) {
-      setFormData({
-        mediaCode: currentAd.media.mediaCode,
-        url: currentAd.media.url,
-        link: currentAd.link || "",
-        isActive: currentAd.isActive,
-        isDirty: false,
-      });
-    } else {
-      // Reset về trống nếu không có ad
-      setFormData({
-        mediaCode: "",
-        url: "",
-        link: "",
-        isActive: true,
-        isDirty: false,
-      });
-    }
-  }, [currentAd]);
+  const isUploading = uploadSingleState.isLoading;
+  const isSubmitting = creating || isUploading;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      // Use MediaUsageEnum.ADVERTISEMENT
+      // Kết quả upload trả về: { message: '...', data: { mediaCode: '...', url: '...' } }
       const uploaded = await uploadSingle(file, MediaUsageEnum.ADVERTISEMENT);
-      if (uploaded) {
-        setFormData(prev => ({
-          ...prev,
-          mediaCode: uploaded.mediaCode,
-          url: uploaded.url,
-          isDirty: true,
-        }));
+      
+      // Handle both wrapped and unwrapped response just in case
+      const mediaData = uploaded?.data || uploaded;
+
+      if (mediaData && mediaData.mediaCode) {
+        setFormData({
+          mediaCode: mediaData.mediaCode,
+          url: mediaData.url,
+        });
       }
     } catch (err) {
       console.error("Upload failed", err);
@@ -99,221 +81,425 @@ const AdSlotCard = ({
     }
   };
 
-  const handleLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, link: e.target.value, isDirty: true }));
-  };
-
-  const handleSaveClick = () => {
+  const handleSubmit = async () => {
     if (!formData.mediaCode) {
-      alert("Vui lòng chọn ảnh trước khi lưu!");
+      alert("Vui lòng tải ảnh lên");
       return;
     }
-    onSave(position, {
-      mediaCode: formData.mediaCode,
-      url: formData.url,
-      link: formData.link,
-      isActive: formData.isActive,
+
+    // Save to DB: mediaCode + url
+    const success = await createAd({
+      title: `Quảng cáo ${position} - ${new Date().toLocaleTimeString()}`,
+      position: position,
+      media: { mediaCode: formData.mediaCode, url: formData.url },
+      link: "", // No link
+      isActive: true, // Default active
+      priority: 0,
     });
+
+    if (success) {
+      onSuccess();
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col h-full">
-      <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
-        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-          {position === AdvertisementPosition.POPUP ? (
-            <span className="bg-purple-100 text-purple-700 p-1 rounded"><ImageIcon size={16}/></span>
-          ) : (
-             <span className="bg-blue-100 text-blue-700 p-1 rounded"><ImageIcon size={16}/></span>
-          )}
-          {title}
-        </h3>
-        {currentAd && (
-           <div className={`text-xs px-2 py-1 rounded-full ${currentAd.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-             {currentAd.isActive ? 'Đang hiện' : 'Đang ẩn'}
-           </div>
-        )}
+    <div className="bg-gray-50 rounded-lg p-4 border border-blue-100 mb-4 animate-in fade-in slide-in-from-top-2">
+      <div className="flex justify-between items-center mb-3">
+        <h4 className="text-sm font-semibold text-blue-800">Thêm ảnh mới</h4>
+        <button onClick={onCancel} className="text-gray-400 hover:text-red-500">
+          <X size={16} />
+        </button>
       </div>
 
-      {/* Image Preview Area */}
-      <div className="relative group w-full aspect-video bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden mb-4 hover:border-blue-400 transition-colors">
+      {/* Upload Area */}
+      <div className="relative group w-full aspect-video bg-white rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden mb-3 hover:border-blue-400 transition-colors">
         {formData.url ? (
           <>
-            <img src={formData.url} alt="Preview" className="w-full h-full object-contain" />
+            <img
+              src={getFullImageUrl(formData.url)}
+              alt="Preview"
+              className="w-full h-full object-contain"
+            />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <label className="cursor-pointer bg-white text-gray-800 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2 shadow-sm">
-                <RefreshCw size={14} /> {isUploading ? "Đang tải..." : "Thay ảnh"}
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+              <label className="cursor-pointer bg-white text-gray-800 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-50 flex items-center gap-2 shadow-sm">
+                <RefreshCw size={12} /> {isUploading ? "..." : "Đổi ảnh"}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={isSubmitting}
+                />
               </label>
             </div>
           </>
         ) : (
           <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500">
-             <Upload size={32} className="mb-2" />
-             <span className="text-sm">{isUploading ? "Đang tải..." : "Tải ảnh lên"}</span>
-             <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+            <Upload size={24} className="mb-1" />
+            <span className="text-xs">{isUploading ? "Đang tải..." : "Tải ảnh"}</span>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isSubmitting}
+            />
           </label>
         )}
       </div>
 
-      {/* Link Input */}
-      <div className="mb-4">
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Đường dẫn (Link)</label>
-        <div className="relative">
-           <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-           <input 
-             type="text" 
-             value={formData.link} 
-             onChange={handleLinkChange}
-             placeholder="https://..." 
-             className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-           />
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting || !formData.mediaCode}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? "Lưu" : "Thêm vào danh sách"}
+      </button>
+    </div>
+  );
+};
+
+// --- Component: Form chỉnh sửa quảng cáo (chỉ sửa ảnh) ---
+const EditAdForm = ({
+  ad,
+  onCancel,
+  onSuccess,
+}: {
+  ad: Advertisement;
+  onCancel: () => void;
+  onSuccess: () => void;
+}) => {
+  const { uploadSingle, uploadSingleState } = useAdminMedia();
+  const { updateAd } = useAdvertisement();
+  const [formData, setFormData] = useState<AdFormState>({
+    mediaCode: ad.media.mediaCode,
+    url: ad.media.url,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isUploading = uploadSingleState.isLoading;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const uploaded = await uploadSingle(file, MediaUsageEnum.ADVERTISEMENT);
+      
+      // Handle both wrapped and unwrapped response just in case
+      const mediaData = uploaded?.data || uploaded;
+
+      if (mediaData && mediaData.mediaCode) {
+        setFormData({
+          mediaCode: mediaData.mediaCode,
+          url: mediaData.url,
+        });
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      alert("Upload ảnh thất bại");
+    }
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    const success = await updateAd(ad.code, {
+      media: { mediaCode: formData.mediaCode, url: formData.url },
+    });
+    setIsSubmitting(false);
+
+    if (success) {
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        <h5 className="text-xs font-semibold text-blue-800">Thay đổi hình ảnh</h5>
+        <button onClick={onCancel} className="text-gray-400 hover:text-red-500">
+           <X size={14} />
+        </button>
+      </div>
+
+      {/* Upload Area */}
+      <div className="relative group w-full aspect-video bg-white rounded border-2 border-dashed border-blue-200 flex flex-col items-center justify-center overflow-hidden hover:border-blue-400 transition-colors">
+        <img
+          src={getFullImageUrl(formData.url)}
+          alt="Preview"
+          className="w-full h-full object-contain"
+        />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <label className="cursor-pointer bg-white text-gray-800 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-50 flex items-center gap-2 shadow-sm">
+            <RefreshCw size={12} /> {isUploading ? "..." : "Chọn ảnh khác"}
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isSubmitting || isUploading}
+            />
+          </label>
         </div>
       </div>
 
-      {/* Actions Footer */}
-      <div className="mt-auto flex gap-2 pt-2 border-t border-gray-100">
-        {/* Nút Save: Hiện khi chưa có Ad hoặc có thay đổi */}
-        {(!currentAd || formData.isDirty) && (
-           <button 
-             onClick={handleSaveClick}
-             disabled={isUploading}
-             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400"
-           >
-             <Save size={16} /> Lưu cài đặt
-           </button>
-        )}
-
-        {/* Các nút hành động khi đã có Ad */}
-        {currentAd && !formData.isDirty && (
-          <>
-             <button 
-               onClick={() => onToggleActive(currentAd.code, currentAd.isActive)}
-               className={`flex-1 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 border ${currentAd.isActive ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'}`}
-             >
-               {currentAd.isActive ? <><EyeOff size={16}/> Ẩn</> : <><Eye size={16}/> Hiện</>}
-             </button>
-             
-             <button 
-               onClick={() => {
-                   if(window.confirm('Bạn có chắc chắn muốn xóa quảng cáo này không?')) onDelete(currentAd.code);
-               }}
-               className="px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-               title="Xóa quảng cáo"
-             >
-               <Trash2 size={16} />
-             </button>
-          </>
-        )}
+      <div className="flex gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting || isUploading}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-xs font-medium transition-colors disabled:bg-gray-300"
+        >
+          {isSubmitting ? "Lưu" : "Cập nhật"}
+        </button>
       </div>
     </div>
   );
 };
 
+// --- Component: Hiển thị 1 item quảng cáo ---
+const AdItem = ({
+  ad,
+  onDelete,
+  onToggle,
+  onRefresh,
+}: {
+  ad: Advertisement;
+  onDelete: (code: string) => void;
+  onToggle: (code: string, currentStatus: boolean) => void;
+  onRefresh: () => void;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
 
+  if (isEditing) {
+    return (
+      <EditAdForm
+        ad={ad}
+        onCancel={() => setIsEditing(false)}
+        onSuccess={() => {
+          setIsEditing(false);
+          onRefresh();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="group bg-white border border-gray-200 rounded-lg p-3 flex gap-3 hover:shadow-md transition-shadow">
+      {/* Thumbnail */}
+      <div className="w-24 h-16 shrink-0 bg-gray-50 rounded border border-gray-100 overflow-hidden flex items-center justify-center relative">
+        <img
+          src={getFullImageUrl(ad.media?.url)}
+          alt={ad.title}
+          className="w-full h-full object-contain"
+          onError={(e) => {
+             // Fallback if image load fails
+             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
+          }}
+        />
+      </div>
+
+      {/* Info & Actions */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div className={`text-xs font-medium ${ad.isActive ? 'text-green-600' : 'text-gray-400'}`}>
+             {ad.isActive ? '● Đang hiển thị' : '○ Đang ẩn'}
+        </div>
+
+        <div className="flex items-center gap-1.5 mt-2">
+           {/* Nút Sửa: Thay ảnh */}
+           <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100"
+            title="Thay ảnh khác"
+          >
+            Sửa
+          </button>
+
+          {/* Nút Ẩn/Hiện */}
+          <button
+            onClick={() => onToggle(ad.code, ad.isActive)}
+            className={`flex-1 flex items-center justify-center gap-1 text-xs py-1 px-2 rounded border ${
+              ad.isActive
+                ? "border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                : "border-green-200 text-green-700 bg-green-50 hover:bg-green-100"
+            }`}
+            title={ad.isActive ? "Ẩn quảng cáo" : "Hiện quảng cáo"}
+          >
+            {ad.isActive ? (
+              <>
+                <EyeOff size={12} /> Ẩn
+              </>
+            ) : (
+              <>
+                <Eye size={12} /> Hiện
+              </>
+            )}
+          </button>
+
+          {/* Nút Xóa */}
+          <button
+            onClick={() => {
+              if (confirm("Chắc chắn xóa quảng cáo này?")) onDelete(ad.code);
+            }}
+            className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded border border-red-100 text-red-600 bg-red-50 hover:bg-red-100"
+            title="Xóa quảng cáo"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Component: Cột hiển thị theo vị trí ---
+const AdsColumn = ({
+  title,
+  position,
+  ads,
+  onDelete,
+  onToggle,
+  onRefresh,
+}: {
+  title: string;
+  position: AdvertisementPosition;
+  ads: Advertisement[];
+  onDelete: (code: string) => void;
+  onToggle: (code: string, currentStatus: boolean) => void;
+  onRefresh: () => void;
+}) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+           {position === AdvertisementPosition.POPUP ? (
+             <span className="bg-purple-100 text-purple-700 p-1.5 rounded"><ImageIcon size={16}/></span>
+           ) : (
+              <span className="bg-blue-100 text-blue-700 p-1.5 rounded"><ImageIcon size={16}/></span>
+           )}
+           {title}
+        </h3>
+        <span className="bg-white px-2 py-0.5 rounded text-xs border border-gray-200 text-gray-500 font-medium">
+          {ads.length}
+        </span>
+      </div>
+
+      <div className="flex-1 p-4 overflow-y-auto bg-gray-50/30 scrollbar-thin">
+        {showAddForm ? (
+          <NewAdForm
+            position={position}
+            onCancel={() => setShowAddForm(false)}
+            onSuccess={() => {
+              setShowAddForm(false);
+              onRefresh();
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="w-full py-3 mb-4 rounded-lg border-2 border-dashed border-gray-300 text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 font-medium text-sm"
+          >
+            <Plus size={16} /> Thêm ảnh mới
+          </button>
+        )}
+
+        <div className="space-y-3">
+          {ads.map((ad) => (
+            <AdItem
+              key={ad.code}
+              ad={ad}
+              onDelete={onDelete}
+              onToggle={onToggle}
+              onRefresh={onRefresh}
+            />
+          ))}
+          {ads.length === 0 && !showAddForm && (
+            <div className="text-center py-8 text-gray-400 text-sm">
+              Chưa có hình ảnh nào
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main Layout ---
 const AdsManager = () => {
-  const { 
-    ads, 
-    loading, 
-    fetchAds, 
-    createAd, 
-    updateAd, 
-    deleteAd, 
-    getAdByPosition 
+  const {
+    ads,
+    loading,
+    error,
+    fetchAds,
+    updateAd,
+    deleteAd,
   } = useAdvertisement();
-  
+
   useEffect(() => {
     fetchAds();
   }, [fetchAds]);
 
-  const handleSave = async (
-    position: AdvertisementPosition, 
-    data: { mediaCode: string; url: string; link: string; isActive: boolean }
-  ) => {
-    const currentAd = getAdByPosition(position);
-
-    if (currentAd) {
-      // Update existing
-      await updateAd(currentAd.code, {
-        media: { mediaCode: data.mediaCode, url: data.url },
-        link: data.link,
-        isActive: data.isActive
-      });
-    } else {
-      // Create new
-      await createAd({
-        title: `Quảng cáo ${position}`,
-        position: position,
-        media: { mediaCode: data.mediaCode, url: data.url },
-        link: data.link,
-        isActive: true, // Default active for new
-        priority: 0
-      });
-    }
-  };
-
   const handleToggleActive = async (code: string, currentStatus: boolean) => {
     await updateAd(code, { isActive: !currentStatus });
+    fetchAds();
   };
 
   const handleDelete = async (code: string) => {
     await deleteAd(code);
+    fetchAds();
   };
 
-  if(!ads && loading) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
+  // Safe filter
+  const safeAds = Array.isArray(ads) ? ads : [];
+  const leftAds = safeAds.filter((ad) => ad.position === AdvertisementPosition.LEFT);
+  const rightAds = safeAds.filter((ad) => ad.position === AdvertisementPosition.RIGHT);
+  const popupAds = safeAds.filter((ad) => ad.position === AdvertisementPosition.POPUP);
+
+  if (loading && safeAds.length === 0) {
+    return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
+  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Quản lý Quảng Cáo</h1>
-        <p className="text-sm text-gray-500 mt-1">Cài đặt banner hiển thị ở các vị trí trên website (Trái, Phải, Popup)</p>
+    <div className="p-4 sm:p-6 h-[calc(100vh-4rem)] flex flex-col">
+      <div className="mb-6 shrink-0">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+           <RefreshCw size={24} className="text-blue-600"/>
+           Quản lý Quảng Cáo
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Quản lý hình ảnh banner hiển thị (Trái, Phải, Popup). 
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Banner Trái */}
-        <div className="md:col-start-1">
-          <AdSlotCard
-            title="Banner Bên Trái"
-            position={AdvertisementPosition.LEFT}
-            currentAd={getAdByPosition(AdvertisementPosition.LEFT)}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
-          />
-        </div>
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-0">
+        <AdsColumn
+          title="Banner Trái"
+          position={AdvertisementPosition.LEFT}
+          ads={leftAds}
+          onDelete={handleDelete}
+          onToggle={handleToggleActive}
+          onRefresh={fetchAds}
+        />
+        
+        <AdsColumn
+          title="Popup Giữa"
+          position={AdvertisementPosition.POPUP}
+          ads={popupAds}
+          onDelete={handleDelete}
+          onToggle={handleToggleActive}
+          onRefresh={fetchAds}
+        />
 
-        {/* Popup Giữa (Ưu tiên hiển thị ở giữa để dễ nhìn trong grid) */}
-        <div className="md:col-start-2">
-          <AdSlotCard
-            title="Popup Giữa Màn Hình"
-            position={AdvertisementPosition.POPUP}
-            currentAd={getAdByPosition(AdvertisementPosition.POPUP)}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
-          />
-        </div>
-
-        {/* Banner Phải */}
-        <div className="md:col-start-3">
-          <AdSlotCard
-            title="Banner Bên Phải"
-            position={AdvertisementPosition.RIGHT}
-            currentAd={getAdByPosition(AdvertisementPosition.RIGHT)}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
-          />
-        </div>
-      </div>
-      
-      {/* Hướng dẫn nhanh */}
-      <div className="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
-        <h4 className="font-bold mb-2 flex items-center gap-2">💡 Ghi chú:</h4>
-        <ul className="list-disc list-inside space-y-1 pl-2">
-          <li>Hình ảnh sẽ hiển thị ngay khi bạn ấn <strong>Lưu cài đặt</strong> hoặc <strong>Hiện</strong>.</li>
-          <li>Kích thước khuyến nghị: Banner dọc (Trái/Phải): <strong>160x600px</strong>. Popup: <strong>800x600px</strong>.</li>
-          <li>Nếu bạn muốn tắt quảng cáo tạm thời, hãy dùng nút <strong>Ẩn</strong> thay vì Xóa.</li>
-        </ul>
+        <AdsColumn
+          title="Banner Phải"
+          position={AdvertisementPosition.RIGHT}
+          ads={rightAds}
+          onDelete={handleDelete}
+          onToggle={handleToggleActive}
+          onRefresh={fetchAds}
+        />
       </div>
     </div>
   );

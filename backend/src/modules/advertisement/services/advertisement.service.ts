@@ -20,6 +20,7 @@ export class AdvertisementService {
     return {
       message: 'Tạo quảng cáo thành công',
       data: saved,
+      errorCode: null,
     };
   }
 
@@ -41,6 +42,7 @@ export class AdvertisementService {
     return {
       message: 'Lấy danh sách quảng cáo thành công',
       data: items,
+      errorCode: null,
     };
   }
 
@@ -53,6 +55,7 @@ export class AdvertisementService {
     return {
       message: 'Lấy chi tiết quảng cáo thành công',
       data: item,
+      errorCode: null,
     };
   }
 
@@ -65,6 +68,7 @@ export class AdvertisementService {
     return {
       message: 'Cập nhật quảng cáo thành công',
       data: updated,
+      errorCode: null,
     };
   }
 
@@ -77,6 +81,7 @@ export class AdvertisementService {
     return {
       message: 'Xóa quảng cáo thành công',
       data: deleted,
+      errorCode: null,
     };
   }
 }

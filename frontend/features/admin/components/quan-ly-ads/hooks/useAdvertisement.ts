@@ -17,11 +17,14 @@ export const useAdvertisement = () => {
     setError(null);
     try {
       const data = await advertisementService.getAdvertisements();
-      setAds(data);
+      // Ensure data is an array
+      setAds(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Có lỗi xảy ra khi tải quảng cáo"
       );
+      // Ensure ads is not null/undefined on error
+      setAds([]);
     } finally {
       setLoading(false);
     }
@@ -79,6 +82,7 @@ export const useAdvertisement = () => {
 
   // Helper để lấy quảng cáo theo vị trí (ưu tiên cái mới nhất hoặc priority cao nhất)
   const getAdByPosition = (position: AdvertisementPosition) => {
+    if (!Array.isArray(ads)) return null;
     const filtered = ads.filter((ad) => ad.position === position);
     // Sort by priority desc, then updatedAt desc
     return (

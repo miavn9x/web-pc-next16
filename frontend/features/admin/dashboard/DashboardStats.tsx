@@ -16,10 +16,10 @@ import {
 import ReactECharts from "echarts-for-react";
 
 // Services
-import { ordersService } from "./quan-ly-don-hang/services/Orders";
-import { getAllProducts } from "./quan-ly-san-pham/services/listProductServices";
-import { postService } from "./quan-ly-noi-dung/services/postService";
-import { couponService } from "./quan-ly-ma-giam-gia/services/servicesCoupons";
+import { ordersService } from "../components/quan-ly-don-hang/services/Orders";
+import { getAllProducts } from "../components/quan-ly-san-pham/services/listProductServices";
+import { postService } from "../components/quan-ly-noi-dung/services/postService";
+import { couponService } from "../components/quan-ly-ma-giam-gia/services/servicesCoupons";
 import { useAdminPage } from "../contexts/AdminPageContext";
 
 interface DashboardData {

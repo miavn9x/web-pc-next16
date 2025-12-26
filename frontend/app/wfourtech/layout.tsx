@@ -11,11 +11,11 @@ import { AdminClientWrapper } from "@/shared/components/AdminClientWrapper";
 import QueryProvider from "@/shared/components/QueryProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import TourGuide from "@/features/admin/components/TourGuide";
+import TourGuide from "@/features/admin/common/TourGuide";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { parseJwt } from "@/shared/utlis/jwt.utils";
-import { UnauthorizedHandler } from "@/features/admin/components/UnauthorizedHandler";
+import { UnauthorizedHandler } from "@/features/admin/common/UnauthorizedHandler";
 
 
 export const metadata: Metadata = {

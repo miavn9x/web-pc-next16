@@ -12,7 +12,7 @@ const AdminSidebar = () => {
   return (
     <div
       id="admin-sidebar"
-      className={`bg-white shadow-lg transition-all duration-100 ease-in-out relative flex-shrink-0 ${
+      className={`bg-white shadow-lg transition-all duration-100 ease-in-out relative ${
         isSidebarOpen ? "w-[300px]" : "w-16"
       }`}
       style={{

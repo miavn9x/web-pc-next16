@@ -6,12 +6,12 @@ import { useEffect, useRef } from "react";
 
 import { useAdminPage } from "../contexts/AdminPageContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import { startDashboardTour } from "./guide/components/DashboardTour";
-import { startProductTour, startProductAddTour } from "./guide/components/product";
-import { startOrdersTour } from "./guide/components/Order";
-import { startCustomersTour } from "./guide/components/Customer";
-import { startPostsListTour, startCreatePostTour, startEditPostTour, startDeleteTour } from "./guide/components/Content";
-import { startCouponsListTour, startCouponsAddTour } from "./guide/components/Promotion";
+import { startDashboardTour } from "../components/guide/components/DashboardTour";
+import { startProductTour, startProductAddTour } from "../components/guide/components/product";
+import { startOrdersTour } from "../components/guide/components/Order";
+import { startCustomersTour } from "../components/guide/components/Customer";
+import { startPostsListTour, startCreatePostTour, startEditPostTour, startDeleteTour } from "../components/guide/components/Content";
+import { startCouponsListTour, startCouponsAddTour } from "../components/guide/components/Promotion";
 
 const TourGuide = () => {
   const searchParams = useSearchParams();

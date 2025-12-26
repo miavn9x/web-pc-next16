@@ -3,19 +3,19 @@
 import { useState, useEffect } from "react";
 
 import { useAdminPage } from "../contexts/AdminPageContext";
-import OrderManagement from "./quan-ly-don-hang/OrderManagement";
-import ProductsEdit from "./quan-ly-san-pham/ProductsEdit";
-import ProductsList from "./quan-ly-san-pham/ProductsList";
-import ProductsAdd from "./quan-ly-san-pham/ProductsAdd";
-import PostsList from "./quan-ly-noi-dung/PostsList";
-import CreatePost from "./quan-ly-noi-dung/CreatePost";
-import EditPost from "./quan-ly-noi-dung/EditPost";
-import CouponsList from "./quan-ly-ma-giam-gia/CouponsList";
-import CouponsAdd from "./quan-ly-ma-giam-gia/CouponsAdd";
-import DashboardStats from "./DashboardStats";
-import CustomersManagement from "./quan-ly-khach-hang/CustomersManagement";
-import GuideCenter from "./guide/GuideCenter";
-import AdsManager from "./quan-ly-ads/AdsManager";
+import OrderManagement from "../components/quan-ly-don-hang/OrderManagement";
+import ProductsEdit from "../components/quan-ly-san-pham/ProductsEdit";
+import ProductsList from "../components/quan-ly-san-pham/ProductsList";
+import ProductsAdd from "../components/quan-ly-san-pham/ProductsAdd";
+import PostsList from "../components/quan-ly-noi-dung/PostsList";
+import CreatePost from "../components/quan-ly-noi-dung/CreatePost";
+import EditPost from "../components/quan-ly-noi-dung/EditPost";
+import CouponsList from "../components/quan-ly-ma-giam-gia/CouponsList";
+import CouponsAdd from "../components/quan-ly-ma-giam-gia/CouponsAdd";
+import DashboardStats from "../dashboard/DashboardStats";
+import CustomersManagement from "../components/quan-ly-khach-hang/CustomersManagement";
+import GuideCenter from "../components/guide/GuideCenter";
+import AdsManager from "../components/quan-ly-ads/AdsManager";
 
 const AdminContent = () => {
   const { currentPage, setCurrentPage } = useAdminPage();

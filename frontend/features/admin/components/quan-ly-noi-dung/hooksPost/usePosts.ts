@@ -6,9 +6,8 @@ import {
   postService,
   type Post,
   type PostListItem,
-  type LocalizedString,
   type MediaCover,
-} from "@/features/admin/services/servicsePost/postService";
+} from "@/features/admin/components/quan-ly-noi-dung/servicsePost/postService";
 import { useAdminMedia } from "@/features/admin/hooks/media/useAdminMedia";
 import { MediaUsageEnum } from "@/features/admin/types/media/adminMedia.types";
 
@@ -17,17 +16,17 @@ interface UsePostsReturn {
   isLoading: boolean;
   error: string | null;
   createPost: (_postData: {
-    title: LocalizedString;
-    description: LocalizedString;
-    content: LocalizedString;
+    title: string;
+    description: string;
+    content: string;
     cover: MediaCover;
   }) => Promise<Post>;
   updatePost: (
     _code: string,
     _postData: Partial<{
-      title?: LocalizedString;
-      description?: LocalizedString;
-      content?: LocalizedString;
+      title?: string;
+      description?: string;
+      content?: string;
       cover?: MediaCover;
     }>
   ) => Promise<Post>;
@@ -116,12 +115,35 @@ export function usePosts(): UsePostsReturn {
     [hardDelete, clearCoverInput]
   );
 
+  // Helper to handle legacy multi-language data
+  const normalizeContent = (content: any): string => {
+    if (typeof content === "object" && content !== null && "vi" in content) {
+      return content.vi || "";
+    }
+    return String(content || "");
+  };
+
+  const normalizePost = (post: any): Post => {
+    return {
+      ...post,
+      title: normalizeContent(post.title),
+      description: normalizeContent(post.description),
+      content: normalizeContent(post.content),
+    };
+  };
+
   const refreshPosts = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await postService.getPosts();
-      setPosts(response.items);
+      // Normalize data to ensure strings even if backend sends legacy objects
+      const normalizedPosts = response.items.map((item: any) => ({
+        ...item,
+        title: normalizeContent(item.title),
+        description: normalizeContent(item.description),
+      }));
+      setPosts(normalizedPosts);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load posts";
@@ -137,25 +159,26 @@ export function usePosts(): UsePostsReturn {
 
   const createPost = useCallback(
     async (postData: {
-      title: LocalizedString;
-      description: LocalizedString;
-      content: LocalizedString;
+      title: string;
+      description: string;
+      content: string;
       cover: MediaCover;
     }): Promise<Post> => {
       try {
         setError(null);
         const newPost = await postService.createPost(postData);
+        const normalizedPost = normalizePost(newPost);
         setPosts((prevPosts) => [
           {
-            code: newPost.code,
-            title: newPost.title,
-            description: newPost.description,
-            cover: newPost.cover,
+            code: normalizedPost.code,
+            title: normalizedPost.title,
+            description: normalizedPost.description,
+            cover: normalizedPost.cover,
           },
           ...prevPosts,
         ]);
         clearCoverInput();
-        return newPost;
+        return normalizedPost;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to create post";
@@ -170,28 +193,29 @@ export function usePosts(): UsePostsReturn {
     async (
       code: string,
       postData: Partial<{
-        title?: LocalizedString;
-        description?: LocalizedString;
-        content?: LocalizedString;
+        title?: string;
+        description?: string;
+        content?: string;
         cover?: MediaCover;
       }>
     ): Promise<Post> => {
       try {
         setError(null);
         const updatedPost = await postService.updatePost(code, postData);
+        const normalizedPost = normalizePost(updatedPost);
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
             post.code === code
               ? {
-                  code: updatedPost.code,
-                  title: updatedPost.title,
-                  description: updatedPost.description,
-                  cover: updatedPost.cover,
+                  code: normalizedPost.code,
+                  title: normalizedPost.title,
+                  description: normalizedPost.description,
+                  cover: normalizedPost.cover,
                 }
               : post
           )
         );
-        return updatedPost;
+        return normalizedPost;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to update post";
@@ -219,7 +243,7 @@ export function usePosts(): UsePostsReturn {
     try {
       setError(null);
       const post = await postService.getPost(code);
-      return post;
+      return normalizePost(post);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to get post";
@@ -252,4 +276,4 @@ export function usePosts(): UsePostsReturn {
   };
 }
 
-export type { Post, PostListItem, LocalizedString, MediaCover };
+export type { Post, PostListItem, MediaCover };

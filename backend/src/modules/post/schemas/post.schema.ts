@@ -3,15 +3,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 // --- [MultilangString] ---
-@Schema({ _id: false })
-class MultilangString {
-  @Prop({ required: true, default: '' })
-  vi: string;
-
-  @Prop({ required: true, default: '' })
-  ja: string;
-}
-
 // --- [Kiểu dữ liệu Document] ---
 export type PostDocument = Post & Document;
 
@@ -27,20 +18,20 @@ export class Post {
   /**
    * Tiêu đề bài viết
    */
-  @Prop({ type: MultilangString, required: true })
-  title: MultilangString;
+  @Prop({ required: true })
+  title: string;
 
   /**
    * Mô tả ngắn của bài viết
    */
-  @Prop({ type: MultilangString, required: true })
-  description: MultilangString;
+  @Prop({ required: true })
+  description: string;
 
   /**
    * Nội dung chính của bài viết
    */
-  @Prop({ type: MultilangString, required: true })
-  content: MultilangString;
+  @Prop({ required: true })
+  content: string;
 
   /**
    * Ảnh đại diện bài viết

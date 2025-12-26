@@ -17,6 +17,7 @@ import { ProductModule } from './modules/products/product.module';
 import { UsersModule } from './modules/users/user.module';
 import { MediaModule } from './modules/media/media.module';
 import { CouponModule } from './modules/coupons/coupon.module';
+import { AdvertisementModule } from './modules/advertisement/advertisement.module';
 
 // --- Cấu Hình Module Gốc AppModule ---
 @Module({
@@ -51,6 +52,7 @@ import { CouponModule } from './modules/coupons/coupon.module';
     OrdersModule,
     MediaModule,
     CouponModule,
+    AdvertisementModule,
   ],
   // --- Controller ---
   controllers: [AppController],

@@ -62,7 +62,10 @@ export enum MediaUsageEnum {
   /** Media sử dụng cho bài viết */
   POST = "post",
   /** Media sử dụng cho người dùng */
+  /** Media sử dụng cho người dùng */
   USER = "user",
+  /** Media sử dụng cho quảng cáo */
+  ADVERTISEMENT = "advertisement",
   /** Media sử dụng cho mục đích khác */
   OTHER = "other",
 }

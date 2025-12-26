@@ -12,6 +12,7 @@ export class PostService {
   ) {}
 
   // --- Tạo bài viết ---
+  // --- Tạo bài viết ---
   async create(dto: CreatePostDto) {
     const now = new Date();
     const datePart = `${now.getDate().toString().padStart(2, '0')}${(now.getMonth() + 1)
@@ -23,7 +24,7 @@ export class PostService {
     while (exist) {
       const random = Math.floor(100000 + Math.random() * 900000);
       code = `POST${datePart}${random}`;
-      const existed = await this.postModel.exists({ code });
+      const existed = await this.postModel.exists({ code }).exec();
       exist = !!existed;
     }
 
@@ -38,7 +39,7 @@ export class PostService {
 
   // --- Cập nhật bài viết ---
   async update(code: string, dto: UpdateOrderDto) {
-    const exists = await this.postModel.exists({ code });
+    const exists = await this.postModel.exists({ code }).exec();
     if (!exists) {
       return {
         message: 'Không tìm thấy bài viết',
@@ -47,9 +48,11 @@ export class PostService {
       };
     }
 
-    const updated = await this.postModel.findOneAndUpdate({ code }, dto, {
-      new: true,
-    });
+    const updated = await this.postModel
+      .findOneAndUpdate({ code }, dto, {
+        new: true,
+      })
+      .exec();
 
     return {
       message: 'Cập nhật bài viết thành công',
@@ -58,17 +61,28 @@ export class PostService {
     };
   }
 
-  // --- Lấy danh sách toàn bộ bài viết (có phân trang) ---
-  async findAll(page: number, limit: number) {
+  // --- Lấy danh sách toàn bộ bài viết (có phân trang & tìm kiếm) ---
+  async findAll(page: number, limit: number, search?: string) {
     const skip = (page - 1) * limit;
+    const query = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { content: { $regex: search, $options: 'i' } },
+          ],
+        }
+      : {};
+
     const [items, total] = await Promise.all([
       this.postModel
-        .find({}, 'code cover title description -_id')
+        .find(query, 'code cover title description -_id')
         .sort({ updatedAt: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
-      this.postModel.countDocuments(),
+        .lean()
+        .exec(),
+      this.postModel.countDocuments(query).exec(),
     ]);
 
     return {
@@ -87,7 +101,7 @@ export class PostService {
 
   // --- Lấy chi tiết bài viết ---
   async findOne(code: string) {
-    const post = await this.postModel.findOne({ code }).lean();
+    const post = await this.postModel.findOne({ code }).lean().exec();
     if (!post) {
       return {
         message: 'Không tìm thấy bài viết',
@@ -105,7 +119,7 @@ export class PostService {
 
   // --- Xoá bài viết ---
   async delete(code: string) {
-    const deleted = await this.postModel.findOneAndDelete({ code });
+    const deleted = await this.postModel.findOneAndDelete({ code }).exec();
     if (!deleted) {
       return {
         message: 'Không tìm thấy bài viết',

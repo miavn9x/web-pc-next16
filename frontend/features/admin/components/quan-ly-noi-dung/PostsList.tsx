@@ -13,55 +13,30 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useAdminPage } from "@/features/admin/contexts/AdminPageContext";
-import { usePosts } from "@/features/admin/hooks/hooksPost/usePosts";
+import { usePosts } from "@/features/admin/components/quan-ly-noi-dung/hooksPost/usePosts";
 
-const translations = {
-  vi: {
-    postsList: "Danh sách bài viết",
-    managePosts: "Quản lý bài viết của bạn",
-    totalPosts: "tổng cộng",
-    refresh: "Làm mới",
-    newPost: "Bài viết mới",
-    errorLoadingPosts: "Lỗi tải bài viết",
-    tryAgain: "Thử lại",
-    searchPlaceholder: "Tìm kiếm bài viết theo tiêu đề hoặc mô tả...",
-    noPostsFound: "Không tìm thấy bài viết nào",
-    noPostsYet: "Chưa có bài viết nào",
-    adjustSearch:
-      "Hãy thử điều chỉnh các điều khoản tìm kiếm của bạn hoặc xóa tìm kiếm để xem tất cả các bài viết.",
-    getStarted: "Bắt đầu bằng cách tạo bài viết đầu tiên của bạn.",
-    createFirstPost: "Tạo bài viết đầu tiên của bạn",
-    editPost: "Chỉnh sửa bài viết",
-    deletePost: "Xóa bài viết",
-    confirmDelete: "Bạn có chắc chắn muốn xóa bài viết này không?",
-    failedToDelete: "Xóa bài viết thất bại. Vui lòng thử lại.",
-    loadingPosts: "Đang tải bài viết...",
-    postTitle: "Tiêu đề bài viết",
-    postDescription: "Mô tả bài viết",
-  },
-  ja: {
-    postsList: "投稿リスト",
-    managePosts: "ブログ投稿を管理する",
-    totalPosts: "合計",
-    refresh: "更新",
-    newPost: "新規投稿",
-    errorLoadingPosts: "投稿の読み込みエラー",
-    tryAgain: "再試行",
-    searchPlaceholder: "タイトルまたは説明で投稿を検索...",
-    noPostsFound: "投稿が見つかりません",
-    noPostsYet: "まだ投稿がありません",
-    adjustSearch:
-      "検索条件を調整するか、検索をクリアしてすべての投稿を表示してみてください。",
-    getStarted: "最初の投稿を作成して始めましょう。",
-    createFirstPost: "最初の投稿を作成",
-    editPost: "投稿を編集",
-    deletePost: "投稿を削除",
-    confirmDelete: "この投稿を削除してもよろしいですか？",
-    failedToDelete: "投稿の削除に失敗しました。もう一度お試しください。",
-    loadingPosts: "投稿を読み込み中...",
-    postTitle: "投稿タイトル",
-    postDescription: "投稿の説明",
-  },
+const t = {
+  postsList: "Danh sách bài viết",
+  managePosts: "Quản lý bài viết của bạn",
+  totalPosts: "tổng cộng",
+  refresh: "Làm mới",
+  newPost: "Bài viết mới",
+  errorLoadingPosts: "Lỗi tải bài viết",
+  tryAgain: "Thử lại",
+  searchPlaceholder: "Tìm kiếm bài viết theo tiêu đề hoặc mô tả...",
+  noPostsFound: "Không tìm thấy bài viết nào",
+  noPostsYet: "Chưa có bài viết nào",
+  adjustSearch:
+    "Hãy thử điều chỉnh các điều khoản tìm kiếm của bạn hoặc xóa tìm kiếm để xem tất cả các bài viết.",
+  getStarted: "Bắt đầu bằng cách tạo bài viết đầu tiên của bạn.",
+  createFirstPost: "Tạo bài viết đầu tiên của bạn",
+  editPost: "Chỉnh sửa bài viết",
+  deletePost: "Xóa bài viết",
+  confirmDelete: "Bạn có chắc chắn muốn xóa bài viết này không?",
+  failedToDelete: "Xóa bài viết thất bại. Vui lòng thử lại.",
+  loadingPosts: "Đang tải bài viết...",
+  postTitle: "Tiêu đề bài viết",
+  postDescription: "Mô tả bài viết",
 };
 
 export default function PostsList() {
@@ -71,18 +46,13 @@ export default function PostsList() {
   const [imageSources, setImageSources] = useState<{ [key: string]: string }>(
     {}
   );
-  const [currentLang, setCurrentLang] = useState<"vi" | "ja">("vi"); // Added currentLang state
-
-  const t = translations[currentLang]; // Get translations for the current language
 
   const filteredPosts = useMemo(() => {
     if (!searchTerm) return posts;
     return posts.filter(
       (post) =>
-        post.title.vi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.title.ja.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.description.vi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.description.ja.toLowerCase().includes(searchTerm.toLowerCase())
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [posts, searchTerm]);
 
@@ -153,29 +123,6 @@ export default function PostsList() {
               </p>
             </div>
             <div id="posts-toolbar-section" className="flex items-center gap-3 flex-wrap justify-center sm:justify-end">
-              {/* Language Switcher */}
-              <div id="posts-lang-switcher" className="flex space-x-2">
-                <button
-                  onClick={() => setCurrentLang("vi")}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
-                    currentLang === "vi"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  VI
-                </button>
-                <button
-                  onClick={() => setCurrentLang("ja")}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
-                    currentLang === "ja"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  JA
-                </button>
-              </div>
               <button
                 id="btn-refresh-posts"
                 onClick={handleRefresh}
@@ -271,7 +218,7 @@ export default function PostsList() {
                                 "/placeholder.svg"
                               }${post.cover.url}`
                             }
-                            alt={post.title[currentLang] || t.postTitle}
+                            alt={post.title || t.postTitle}
                             width={96}
                             height={96}
                             className="w-24 h-24 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
@@ -288,11 +235,11 @@ export default function PostsList() {
                       <div id={`post-content-${index}`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 id={`post-title-${index}`} className="text-xl font-semibold text-gray-900 truncate">
-                            {post.title[currentLang]}
+                            {post.title}
                           </h3>
                         </div>
                         <p id={`post-desc-${index}`} className="text-gray-600 mb-4 leading-relaxed line-clamp-2">
-                          {post.description[currentLang]}
+                          {post.description}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
                           <div id={`post-date-${index}`} className="flex items-center gap-1">

@@ -4,34 +4,22 @@ import { IsNotEmpty, IsObject } from 'class-validator';
 // --- [DTO: Tạo mới bài viết] ---
 export class CreatePostDto {
   /**
-   * Tiêu đề bài viết (đa ngôn ngữ)
+   * Tiêu đề bài viết
    */
-  @IsObject()
   @IsNotEmpty()
-  title: {
-    vi: string;
-    ja: string;
-  };
+  title: string;
 
   /**
-   * Mô tả ngắn bài viết (đa ngôn ngữ)
+   * Mô tả ngắn bài viết
    */
-  @IsObject()
   @IsNotEmpty()
-  description: {
-    vi: string;
-    ja: string;
-  };
+  description: string;
 
   /**
-   * Nội dung chính bài viết (đa ngôn ngữ)
+   * Nội dung chính bài viết
    */
-  @IsObject()
   @IsNotEmpty()
-  content: {
-    vi: string;
-    ja: string;
-  };
+  content: string;
 
   /**
    * Ảnh đại diện bài viết

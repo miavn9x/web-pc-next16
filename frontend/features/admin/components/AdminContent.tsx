@@ -15,6 +15,7 @@ import CouponsAdd from "./quan-ly-ma-giam-gia/CouponsAdd";
 import DashboardStats from "./DashboardStats";
 import CustomersManagement from "./quan-ly-khach-hang/CustomersManagement";
 import GuideCenter from "./guide/GuideCenter";
+import AdsManager from "./quan-ly-ads/AdsManager";
 
 const AdminContent = () => {
   const { currentPage, setCurrentPage } = useAdminPage();
@@ -84,6 +85,10 @@ const AdminContent = () => {
       // Customers
       case "customers-list":
         return <CustomersManagement />;
+
+      // Advertisement
+      case "ads-manager":
+        return <AdsManager />;
 
       default:
         return <DefaultPage currentPage={currentPage} />;

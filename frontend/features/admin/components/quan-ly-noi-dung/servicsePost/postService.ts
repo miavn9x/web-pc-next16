@@ -2,11 +2,6 @@
 
 import axiosInstance from "@/shared/lib/axios"; // Axios có cấu hình token
 
-export interface LocalizedString {
-  vi: string;
-  ja: string;
-}
-
 export interface MediaCover {
   mediaCode: string;
   url: string;
@@ -16,9 +11,9 @@ export interface MediaCover {
 export interface Post {
   _id: string;
   code: string;
-  title: LocalizedString;
-  description: LocalizedString;
-  content: LocalizedString;
+  title: string;
+  description: string;
+  content: string;
   cover: MediaCover;
   createdAt: string;
   updatedAt: string;
@@ -27,8 +22,8 @@ export interface Post {
 
 export interface PostListItem {
   code: string;
-  title: LocalizedString;
-  description: LocalizedString;
+  title: string;
+  description: string;
   cover: MediaCover;
 }
 
@@ -51,7 +46,10 @@ class PostService {
   private baseUrl = "/posts"; // Đã có baseURL trong axiosInstance
 
   // GET /api/posts?page=x&limit=y - Lấy danh sách bài viết
-  async getPosts(page = 1, limit = 50): Promise<{ items: PostListItem[]; pagination: Pagination }> {
+  async getPosts(
+    page = 1,
+    limit = 50
+  ): Promise<{ items: PostListItem[]; pagination: Pagination }> {
     try {
       const response = await axiosInstance.get<ListApiResponse<PostListItem>>(
         `${this.baseUrl}?page=${page}&limit=${limit}`
@@ -113,9 +111,9 @@ class PostService {
   async updatePost(
     code: string,
     postData: Partial<{
-      title?: LocalizedString;
-      description?: LocalizedString;
-      content?: LocalizedString;
+      title?: string;
+      description?: string;
+      content?: string;
       cover?: MediaCover;
     }>
   ): Promise<Post> {

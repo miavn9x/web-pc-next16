@@ -16,104 +16,50 @@ import SunEditorComponent from "@/shared/components/SunEditorComponent";
 import { useAdminPage } from "@/features/admin/contexts/AdminPageContext";
 import {
   usePosts,
-  type LocalizedString,
   type MediaCover,
-} from "@/features/admin/hooks/hooksPost/usePosts";
+} from "@/features/admin/components/quan-ly-noi-dung/hooksPost/usePosts";
 
 interface PostFormData {
-  title: LocalizedString;
-  description: LocalizedString;
-  content: LocalizedString;
+  title: string;
+  description: string;
+  content: string;
   cover: MediaCover;
 }
 
-const translations = {
-  vi: {
-    backToEditor: "Quay lại Trình chỉnh sửa",
-    previewMode: "Chế độ xem trước",
-    preview: "Xem trước",
-    publishing: "Đang xuất bản...",
-    publish: "Xuất bản",
-    error: "Lỗi",
-    failedToUploadCover: "Tải ảnh bìa thất bại: ",
-    failedToDeleteCover: "Xóa ảnh bìa thất bại: ",
-    titleRequired: "Tiêu đề (Tiếng Việt hoặc Tiếng Nhật) là bắt buộc",
-    contentRequired: "Nội dung (Tiếng Việt hoặc Tiếng Nhật) là bắt buộc",
-    failedToSavePost: "Lưu bài viết thất bại",
-    coverImage: "Ảnh bìa",
-    removeCoverImage: "Xóa ảnh bìa",
-    processing: "Đang xử lý...",
-    uploading: "Đang tải lên...",
-    clickToUpload: "Nhấp để tải lên",
-    orDragAndDrop: "hoặc kéo và thả",
-    imageFormatSize: "PNG, JPG, GIF tối đa 5MB",
-    errorUploadingImage: "Lỗi tải ảnh lên: ",
-    vietnameseSectionTitle: "Tiếng Việt (VI)",
-    japaneseSectionTitle: "Tiếng Nhật (JA)",
-    postTitleVi: "Tiêu đề bài viết (Tiếng Việt) *",
-    placeholderTitleVi: "Tiêu đề bài viết bằng tiếng Việt...",
-    descriptionVi: "Mô tả (Tiếng Việt)",
-    placeholderDescriptionVi: "đoạn trích ngắn về bài viết bằng tiếng Việt ...",
-    contentVi: "Nội dung (Tiếng Việt) *",
-    placeholderContentVi: "Bắt đầu viết nội dung bài viết bằng tiếng Việt...",
-    postTitleJa: "投稿タイトル (日本語)",
-    placeholderTitleJa: "タイトルを日本語で入力...",
-    descriptionJa: "説明 (日本語)",
-    placeholderDescriptionJa: "記事の概要を日本語で入力...",
-    contentJa: "コンテンツ (日本語) *",
-    placeholderContentJa: "日本語で投稿コンテンツを書き始める...",
-    createNewPost: "Tạo bài viết mới",
-    deletePost: "Xóa bài viết",
-    deletePostConfirmation:
-      "Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.",
-    cancel: "Hủy",
-    delete: "Xóa",
-    postTitle: "Tiêu đề bài viết",
-    noContent: "Chưa có nội dung...",
-  },
-  ja: {
-    backToEditor: "エディターに戻る",
-    previewMode: "プレビューモード",
-    preview: "プレビュー",
-    publishing: "公開中...",
-    publish: "公開",
-    error: "エラー",
-    failedToUploadCover: "カバー画像のアップロードに失敗しました: ",
-    failedToDeleteCover: "カバー画像の削除に失敗しました: ",
-    titleRequired: "タイトル（ベトナム語または日本語）は必須です",
-    contentRequired: "コンテンツ（ベトナム語または日本語）は必須です",
-    failedToSavePost: "投稿の保存に失敗しました",
-    coverImage: "カバー画像",
-    removeCoverImage: "カバー画像を削除",
-    processing: "処理中...",
-    uploading: "アップロード中...",
-    clickToUpload: "クリックしてアップロード",
-    orDragAndDrop: "またはドラッグ＆ドロップ",
-    imageFormatSize: "PNG, JPG, GIF 最大5MB",
-    errorUploadingImage: "画像のアップロードエラー: ",
-    vietnameseSectionTitle: "ベトナム語 (VI)",
-    japaneseSectionTitle: "日本語 (JA)",
-    postTitleVi: "投稿タイトル (ベトナム語) *",
-    placeholderTitleVi: "ベトナム語で投稿タイトルを入力...",
-    descriptionVi: "説明 (ベトナム語)",
-    placeholderDescriptionVi: "ベトナム語で記事の概要を入力...",
-    contentVi: "コンテンツ (ベトナム語) *",
-    placeholderContentVi: "ベトナム語で投稿コンテンツを書き始める...",
-    postTitleJa: "投稿タイトル (日本語) *",
-    placeholderTitleJa: "タイトルを日本語で入力...",
-    descriptionJa: "説明 (日本語)",
-    placeholderDescriptionJa: "記事の概要を日本語で入力...",
-    contentJa: "コンテンツ (日本語) *",
-    placeholderContentJa: "日本語で投稿コンテンツを書き始める...",
-    createNewPost: "新しい投稿を作成",
-    deletePost: "投稿を削除",
-    deletePostConfirmation:
-      "この投稿を削除してもよろしいですか？この操作は元に戻せません。",
-    cancel: "キャンセル",
-    delete: "削除",
-    postTitle: "投稿タイトル",
-    noContent: "まだコンテンツがありません...",
-  },
+const t = {
+  backToEditor: "Quay lại Trình chỉnh sửa",
+  previewMode: "Chế độ xem trước",
+  preview: "Xem trước",
+  publishing: "Đang xuất bản...",
+  publish: "Xuất bản",
+  error: "Lỗi",
+  failedToUploadCover: "Tải ảnh bìa thất bại: ",
+  failedToDeleteCover: "Xóa ảnh bìa thất bại: ",
+  titleRequired: "Tiêu đề là bắt buộc",
+  contentRequired: "Nội dung là bắt buộc",
+  failedToSavePost: "Lưu bài viết thất bại",
+  coverImage: "Ảnh bìa",
+  removeCoverImage: "Xóa ảnh bìa",
+  processing: "Đang xử lý...",
+  uploading: "Đang tải lên...",
+  clickToUpload: "Nhấp để tải lên",
+  orDragAndDrop: "hoặc kéo và thả",
+  imageFormatSize: "PNG, JPG, GIF tối đa 5MB",
+  errorUploadingImage: "Lỗi tải ảnh lên: ",
+  postTitle: "Tiêu đề bài viết *",
+  placeholderTitle: "Tiêu đề bài viết...",
+  description: "Mô tả",
+  placeholderDescription: "đoạn trích ngắn về bài viết...",
+  content: "Nội dung *",
+  placeholderContent: "Bắt đầu viết nội dung bài viết...",
+  createNewPost: "Tạo bài viết mới",
+  deletePost: "Xóa bài viết",
+  deletePostConfirmation:
+    "Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.",
+  cancel: "Hủy",
+  delete: "Xóa",
+  postTitleLabel: "Tiêu đề bài viết",
+  noContent: "Chưa có nội dung...",
 };
 
 export default function CreatePost() {
@@ -129,19 +75,16 @@ export default function CreatePost() {
   } = usePosts();
 
   const [postData, setPostData] = useState<PostFormData>({
-    title: { vi: "", ja: "" },
-    description: { vi: "", ja: "" },
-    content: { vi: "", ja: "" },
+    title: "",
+    description: "",
+    content: "",
     cover: { mediaCode: "", url: "" },
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [currentLang, setCurrentLang] = useState<"vi" | "ja">("vi");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const t = translations[currentLang]; // Get current language translations
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -179,7 +122,7 @@ export default function CreatePost() {
       }
     };
     uploadCover();
-  }, [coverFile, uploadImage, clearCoverInput, t.failedToUploadCover]);
+  }, [coverFile, uploadImage, clearCoverInput]);
 
   const handleRemoveCover = async () => {
     if (postData.cover.mediaCode) {
@@ -202,23 +145,20 @@ export default function CreatePost() {
     setSaveError(null);
   };
 
-  const handleContentChange = (content: string, lang: "vi" | "ja") => {
+  const handleContentChange = (content: string) => {
     setPostData((prev) => ({
       ...prev,
-      content: {
-        ...prev.content,
-        [lang]: content,
-      },
+      content: content,
     }));
   };
 
   const handleSave = async () => {
     // Enhanced validation
-    if (!postData.title.vi.trim() && !postData.title.ja.trim()) {
+    if (!postData.title.trim()) {
       setSaveError(t.titleRequired);
       return;
     }
-    if (!postData.content.vi.trim() && !postData.content.ja.trim()) {
+    if (!postData.content.trim()) {
       setSaveError(t.contentRequired);
       return;
     }
@@ -245,9 +185,9 @@ export default function CreatePost() {
   // Enhanced form reset
   const resetForm = () => {
     setPostData({
-      title: { vi: "", ja: "" },
-      description: { vi: "", ja: "" },
-      content: { vi: "", ja: "" },
+      title: "",
+      description: "",
+      content: "",
       cover: { mediaCode: "", url: "" },
     });
     setCoverFile(null);
@@ -262,12 +202,9 @@ export default function CreatePost() {
   };
 
   if (isPreview) {
-    const displayTitle =
-      currentLang === "vi" ? postData.title.vi : postData.title.ja;
-    const displayDescription =
-      currentLang === "vi" ? postData.description.vi : postData.description.ja;
-    const displayContent =
-      currentLang === "vi" ? postData.content.vi : postData.content.ja;
+    const displayTitle = postData.title;
+    const displayDescription = postData.description;
+    const displayContent = postData.content;
 
     return (
       <div className="p-4 sm:p-6">
@@ -285,28 +222,6 @@ export default function CreatePost() {
                 <div className="flex items-center gap-2 mb-2 sm:mb-0">
                   <span className="text-sm text-gray-500">{t.previewMode}</span>
                   <Eye className="w-4 h-4 text-gray-500" />
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentLang("vi")}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
-                      currentLang === "vi"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    VI
-                  </button>
-                  <button
-                    onClick={() => setCurrentLang("ja")}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
-                      currentLang === "ja"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    JA
-                  </button>
                 </div>
               </div>
             </div>
@@ -387,7 +302,7 @@ export default function CreatePost() {
                 onClick={() => handleSave()}
                 disabled={
                   isSaving ||
-                  (!postData.title.vi.trim() && !postData.title.ja.trim()) ||
+                  !postData.title.trim() ||
                   uploadState.isLoading
                 }
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -484,116 +399,53 @@ export default function CreatePost() {
                   )}
                 </div>
               </div>
-              {/* Vietnamese Fields */}
-              <div id="section-vi-content" className="border rounded-lg p-4 transition-all duration-200 border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {t.vietnameseSectionTitle}
-                </h3>
+              {/* Main Content Fields */}
+              <div id="section-main-content" className="md:col-span-2 border rounded-lg p-4 transition-all duration-200 border-gray-200">
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.postTitleVi}
+                      {t.postTitleLabel}
                     </label>
                     <input
-                      id="input-title-vi"
+                      id="input-title"
                       type="text"
-                      value={postData.title.vi}
+                      value={postData.title}
                       onChange={(e) =>
                         setPostData((prev) => ({
                           ...prev,
-                          title: { ...prev.title, vi: e.target.value },
+                          title: e.target.value,
                         }))
                       }
-                      placeholder={t.placeholderTitleVi}
+                      placeholder={t.placeholderTitle}
                       className="w-full px-4 py-3 text-2xl font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.descriptionVi}
+                      {t.description}
                     </label>
                     <textarea
-                      id="input-desc-vi"
-                      value={postData.description.vi}
+                      id="input-desc"
+                      value={postData.description}
                       onChange={(e) =>
                         setPostData((prev) => ({
                           ...prev,
-                          description: {
-                            ...prev.description,
-                            vi: e.target.value,
-                          },
+                          description: e.target.value,
                         }))
                       }
-                      placeholder={t.placeholderDescriptionVi}
+                      placeholder={t.placeholderDescription}
                       rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-all duration-200"
                     />
                   </div>
-                  <div id="input-content-vi-wrapper">
+                  <div id="input-content-wrapper">
                     <label className="block text-sm font-medium text-gray-700 mb-4">
-                      {t.contentVi}
+                      {t.content}
                     </label>
                     <SunEditorComponent
-                      value={postData.content.vi}
-                      onChange={(c) => handleContentChange(c, "vi")}
-                      placeholder={t.placeholderContentVi}
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Japanese Fields */}
-              <div id="section-ja-content" className="border rounded-lg p-4 transition-all duration-200 border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {t.japaneseSectionTitle}
-                </h3>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.postTitleJa}
-                    </label>
-                    <input
-                      id="input-title-ja"
-                      type="text"
-                      value={postData.title.ja}
-                      onChange={(e) =>
-                        setPostData((prev) => ({
-                          ...prev,
-                          title: { ...prev.title, ja: e.target.value },
-                        }))
-                      }
-                      placeholder={t.placeholderTitleJa}
-                      className="w-full px-4 py-3 text-2xl font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.descriptionJa}
-                    </label>
-                    <textarea
-                      id="input-desc-ja"
-                      value={postData.description.ja}
-                      onChange={(e) =>
-                        setPostData((prev) => ({
-                          ...prev,
-                          description: {
-                            ...prev.description,
-                            ja: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder={t.placeholderDescriptionJa}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-all duration-200"
-                    />
-                  </div>
-                  <div id="input-content-ja-wrapper">
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      {t.contentJa}
-                    </label>
-                    <SunEditorComponent
-                      value={postData.content.ja}
-                      onChange={(c) => handleContentChange(c, "ja")}
-                      placeholder={t.placeholderContentJa}
+                      value={postData.content}
+                      onChange={handleContentChange}
+                      placeholder={t.placeholderContent}
                     />
                   </div>
                 </div>

@@ -18,7 +18,7 @@ import ReactECharts from "echarts-for-react";
 // Services
 import { ordersService } from "../services/servicesOrders/Orders";
 import { getAllProducts } from "../services/product/listProductServices";
-import { postService } from "../services/servicsePost/postService";
+import { postService } from "./quan-ly-noi-dung/servicsePost/postService";
 import { couponService } from "../services/coupon/servicesCoupons";
 import { useAdminPage } from "../contexts/AdminPageContext";
 

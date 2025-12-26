@@ -9,6 +9,6 @@ export class AppService {
   // Phương thức mẫu trả về chuỗi đơn giản
   // Có thể dùng để kiểm tra hệ thống hoạt động hoặc test route
   getHello(): string {
-    return 'Welcome to Bánh Tránh API!';
+    return 'Welcome to Pc API!';
   }
 }

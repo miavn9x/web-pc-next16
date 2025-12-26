@@ -166,6 +166,17 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
       ],
     },
     {
+      title: "QUẢN LÝ QUẢNG CÁO",
+      items: [
+        {
+          id: "advertisements",
+          icon: Globe, // Tạm dùng icon Globe hoặc tìm cái khác
+          label: "Quảng cáo",
+          page: "ads-manager",
+        },
+      ],
+    },
+    {
       title: "QUẢN LÝ KHUYẾN MÃI",
       items: [
         {

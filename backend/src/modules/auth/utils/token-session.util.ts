@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { JwtService } from '../../../common/jwt/services/jwt.service';
 import { UserDocument } from '../../users/schemas/user.schema';
 import { AuthSessionDocument } from '../schemas/auth.schema';
@@ -24,7 +23,7 @@ export async function createTokenAndSession({
   const sessionId = generateSessionId();
 
   const payload = {
-    sub: (user._id as Types.ObjectId).toString(),
+    sub: user._id.toString(),
     sessionId,
     email: user.email,
     roles: user.roles,
@@ -38,7 +37,7 @@ export async function createTokenAndSession({
   await authSessionModel.create({
     sessionId,
     email: user.email,
-    userId: user._id as Types.ObjectId,
+    userId: user._id,
     refreshToken,
     ipAddress, // Lưu IP
     userAgent, // Lưu User-Agent

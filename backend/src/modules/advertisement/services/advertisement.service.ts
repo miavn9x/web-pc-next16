@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { Model } from 'mongoose';
 import { Advertisement, AdvertisementDocument } from '../schemas/advertisement.schema';
 import { CreateAdvertisementDto } from '../dtos/create-advertisement.dto';
 import { UpdateAdvertisementDto } from '../dtos/update-advertisement.dto';
@@ -26,16 +26,18 @@ export class AdvertisementService {
 
   // --- Lấy danh sách (có filter) ---
   async findAll(query: { position?: string; isActive?: boolean }) {
-    const filter: FilterQuery<AdvertisementDocument> = {};
+    const filter: any = {};
     if (query.position) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       filter.position = query.position;
     }
     if (query.isActive !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       filter.isActive = query.isActive;
     }
 
     const items = await this.adModel
-      .find(filter)
+      .find(filter) // eslint-disable-line @typescript-eslint/no-unsafe-argument
       .sort({ priority: -1, updatedAt: -1 }) // Ưu tiên cao nhất lên đầu
       .exec();
 

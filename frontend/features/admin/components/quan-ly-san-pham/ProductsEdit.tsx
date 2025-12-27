@@ -1,17 +1,13 @@
-
-
 "use client";
 
 import type React from "react";
-import { useRef, useMemo, useState, useEffect } from "react";
+import {  useState, useEffect } from "react";
 import Image from "next/image";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import QuillWrapper from "./quill-wrapper";
-import "node_modules/quill/dist/quill.snow.css";
-import "quill/dist/quill.snow.css";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import { useEditProduct } from "./hooks/editProductHooks";
-import type Quill from "quill";
 
 interface ProductsEditProps {
   productCode: string;
@@ -50,9 +46,6 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
     loading,
     error,
   } = useEditProduct(productCode);
-
-  const quillViRef = useRef<Quill | null>(null);
-  const quillJaRef = useRef<Quill | null>(null);
 
   useEffect(() => {
     if (initialLanguage) {
@@ -192,34 +185,6 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
       }
     );
   };
-
-  const quillModules = useMemo(
-    () => ({
-      toolbar: [
-        [{ header: [1, 2, 3, 4, 5, 6, false] }],
-        ["bold", "italic", "underline", "strike"],
-        [{ list: "ordered" }, { list: "bullet" }],
-        ["link", "video"],
-        ["clean"],
-      ],
-    }),
-    []
-  );
-
-  const quillFormats = useMemo(
-    () => [
-      "header",
-      "bold",
-      "italic",
-      "underline",
-      "strike",
-      "list",
-      "bullet",
-      "link",
-      "video",
-    ],
-    []
-  );
 
   if (loading) {
     return (
@@ -363,7 +328,10 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
           <div className="p-4 sm:p-6" id="product-edit-form">
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Product Names */}
-              <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6" id="field-product-name">
+              <div
+                className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6"
+                id="field-product-name"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {language === "vi"
@@ -411,7 +379,10 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
               </div>
 
               {/* Descriptions */}
-              <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6" id="field-product-desc">
+              <div
+                className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6"
+                id="field-product-desc"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {language === "vi"
@@ -419,13 +390,31 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
                       : "商品説明 (VN)"}
                   </label>
                   <div className="border border-gray-300 rounded-md overflow-hidden">
-                    <QuillWrapper
-                      ref={quillViRef}
-                      value={productData.description.vi || ""}
+                    <SunEditor
+                      setContents={productData.description.vi || ""}
                       onChange={handleDescriptionViChange}
-                      modules={quillModules}
-                      formats={quillFormats}
-                      className="bg-white min-h-[150px]"
+                      setOptions={{
+                        height: "200px",
+                        buttonList: [
+                          ["undo", "redo"],
+                          ["font", "fontSize", "formatBlock"],
+                          ["paragraphStyle", "blockquote"],
+                          [
+                            "bold",
+                            "underline",
+                            "italic",
+                            "strike",
+                            "subscript",
+                            "superscript",
+                          ],
+                          ["fontColor", "hiliteColor", "textStyle"],
+                          ["removeFormat"],
+                          ["outdent", "indent"],
+                          ["align", "horizontalRule", "list", "lineHeight"],
+                          ["table", "link", "image", "video"],
+                          ["fullScreen", "showBlocks", "codeView"],
+                        ],
+                      }}
                     />
                   </div>
                 </div>
@@ -434,20 +423,41 @@ const ProductsEdit: React.FC<ProductsEditProps> = ({
                     {language === "vi" ? "商品説明 (JA)" : "商品説明 (JA)"}
                   </label>
                   <div className="border border-gray-300 rounded-md overflow-hidden">
-                    <QuillWrapper
-                      ref={quillJaRef}
-                      value={productData.description.ja || ""}
+                    <SunEditor
+                      setContents={productData.description.ja || ""}
                       onChange={handleDescriptionJaChange}
-                      modules={quillModules}
-                      formats={quillFormats}
-                      className="bg-white min-h-[150px]"
+                      setOptions={{
+                        height: "200px",
+                        buttonList: [
+                          ["undo", "redo"],
+                          ["font", "fontSize", "formatBlock"],
+                          ["paragraphStyle", "blockquote"],
+                          [
+                            "bold",
+                            "underline",
+                            "italic",
+                            "strike",
+                            "subscript",
+                            "superscript",
+                          ],
+                          ["fontColor", "hiliteColor", "textStyle"],
+                          ["removeFormat"],
+                          ["outdent", "indent"],
+                          ["align", "horizontalRule", "list", "lineHeight"],
+                          ["table", "link", "image", "video"],
+                          ["fullScreen", "showBlocks", "codeView"],
+                        ],
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* Categories */}
-              <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6" id="field-product-category">
+              <div
+                className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6"
+                id="field-product-category"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {language === "vi" ? "Danh mục (VN) *" : "カテゴリ (VN) *"}

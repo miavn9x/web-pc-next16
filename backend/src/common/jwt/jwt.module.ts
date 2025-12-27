@@ -24,7 +24,8 @@ import { JwtService } from './services/jwt.service';
 
         return {
           secret,
-          signOptions: { expiresIn },
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          signOptions: { expiresIn: expiresIn as any },
         };
       },
     }),

@@ -17,12 +17,14 @@ export class JwtService {
   signTokens(payload: JwtPayload): { accessToken: string; refreshToken: string } {
     const accessToken = this.jwt.sign(payload, {
       secret: process.env.JWT_ACCESS_TOKEN_SECRET,
-      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN as any,
     });
 
     const refreshToken = this.jwt.sign(payload, {
       secret: process.env.JWT_REFRESH_TOKEN_SECRET,
-      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN as any,
     });
 
     return { accessToken, refreshToken };

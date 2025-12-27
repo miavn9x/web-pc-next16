@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
+import { useCart } from "@/features/client/cart/context/CartContext";
 
 interface ProductCardProps {
   productCode: string;
@@ -14,12 +15,26 @@ interface ProductCardProps {
 }
 
 export default function FlashSaleProductCard({
+  productCode,
   name,
   image,
   price,
   originalPrice,
   discount,
 }: ProductCardProps) {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: productCode, // Using productCode as ID for now
+      name,
+      code: productCode,
+      price,
+      originalPrice,
+      image,
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer group/card h-full flex flex-col relative border border-gray-100">
       {/* Discount Tag */}
@@ -76,7 +91,15 @@ export default function FlashSaleProductCard({
               </span>
             </div>
           </div>
-          <button className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm group/cart">
+          <button
+            onClick={(e) => {
+              e.preventDefault(); // Prevent navigating if wrapped in Link
+              e.stopPropagation();
+              handleAddToCart();
+            }}
+            className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm group/cart active:scale-95"
+            title="Thêm vào giỏ"
+          >
             <ShoppingCart size={16} />
           </button>
         </div>

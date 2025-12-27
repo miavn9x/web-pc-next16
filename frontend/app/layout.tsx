@@ -3,6 +3,7 @@ import "../shared/styles/globals.css";
 
 import { AuthModalProvider } from "@/features/auth/shared/contexts/AuthModalContext";
 import { AuthModalWrapper } from "@/features/auth/components/AuthModalWrapper";
+import { CartProvider } from "@/features/client/cart/context/CartContext";
 import { Suspense } from "react";
 
 /** ✅ Chuyển themeColor sang viewport (chuẩn Next 15) */
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
   },
 };
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// ... imports
+
 export default async function RootLayout({
   children,
 }: {
@@ -35,10 +41,18 @@ export default async function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body>
         <AuthModalProvider>
-          <Suspense fallback={null}>
-            <AuthModalWrapper />
-          </Suspense>
-          {children}
+          <CartProvider>
+            <Suspense fallback={null}>
+              <AuthModalWrapper />
+            </Suspense>
+            {children}
+            <ToastContainer
+              position="top-right"
+              theme="colored"
+              autoClose={2000}
+              limit={3}
+            />
+          </CartProvider>
         </AuthModalProvider>
       </body>
     </html>

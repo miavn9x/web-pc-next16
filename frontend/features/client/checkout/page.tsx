@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Home } from "lucide-react";
 import CheckoutForm from "./components/CheckoutForm";
 import CheckoutOrderSummary from "./components/OrderSummary";
 import { useCart } from "../cart/context/CartContext";
@@ -16,7 +16,7 @@ export default function CheckoutPage() {
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-500 mb-6 font-medium">
-            <Link href="/" className="hover:text-[#E31837] transition-colors">
+            <Link href="/" className="hover:text-red-500 transition-colors">
               Trang chủ
             </Link>
             <ChevronRight size={14} className="mx-2" />
@@ -32,16 +32,20 @@ export default function CheckoutPage() {
     <div className="bg-gray-50 min-h-screen py-4">
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
-        <div className="flex items-center text-sm text-gray-500 font-medium">
-          <Link href="/" className="hover:text-[#E31837] transition-colors">
+        <div className="flex items-center text-sm text-gray-500 mb-6 font-medium bg-white p-3 rounded-lg shadow-sm w-fit">
+          <Link
+            href="/"
+            className="hover:text-red-500 transition-colors flex items-center gap-1"
+          >
+            <Home size={16} />
             Trang chủ
           </Link>
           <ChevronRight size={14} className="mx-2" />
-          <Link href="/cart" className="hover:text-[#E31837] transition-colors">
+          <Link href="/cart" className="hover:text-red-500 transition-colors">
             Giỏ hàng
           </Link>
           <ChevronRight size={14} className="mx-2" />
-          <span className="text-gray-800">Thanh toán</span>
+          <span className="text-red-500 font-bold">Thanh toán</span>
         </div>
 
         {/* Steps */}

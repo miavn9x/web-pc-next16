@@ -31,7 +31,7 @@ export default function CheckoutForm() {
       {/* DELIVERY INFO */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
-          <MapPin className="text-[#E31837]" size={20} />
+          <MapPin className="text-red-500" size={20} />
           Thông tin giao hàng
         </h3>
 
@@ -48,7 +48,7 @@ export default function CheckoutForm() {
               <input
                 type="text"
                 placeholder="Nhập họ tên của bạn"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E31837]/20 focus:border-[#E31837] transition-all text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm"
               />
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function CheckoutForm() {
               <input
                 type="tel"
                 placeholder="Nhập số điện thoại"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E31837]/20 focus:border-[#E31837] transition-all text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm"
               />
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function CheckoutForm() {
               <input
                 type="email"
                 placeholder="Nhập email để nhận thông tin đơn hàng"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E31837]/20 focus:border-[#E31837] transition-all text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm"
               />
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function CheckoutForm() {
               <textarea
                 rows={3}
                 placeholder="Nhập địa chỉ chi tiết (Số nhà, đường, phường/xã...)"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E31837]/20 focus:border-[#E31837] transition-all text-sm resize-none"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
               />
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function CheckoutForm() {
               <textarea
                 rows={2}
                 placeholder="Ghi chú thêm (ví dụ: Giao hàng giờ hành chính...)"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E31837]/20 focus:border-[#E31837] transition-all text-sm resize-none"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
               />
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function CheckoutForm() {
       {/* PAYMENT METHOD */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
-          <CreditCard className="text-[#E31837]" size={20} />
+          <CreditCard className="text-red-500" size={20} />
           Hình thức thanh toán
         </h3>
 
@@ -133,7 +133,7 @@ export default function CheckoutForm() {
           <label
             className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
               paymentMethod === "cod"
-                ? "border-[#E31837] bg-red-50 ring-1 ring-[#E31837]"
+                ? "border-red-500 bg-red-50 ring-1 ring-red-500"
                 : "border-gray-200 hover:border-gray-300"
             }`}
           >
@@ -143,7 +143,7 @@ export default function CheckoutForm() {
               value="cod"
               checked={paymentMethod === "cod"}
               onChange={() => setPaymentMethod("cod")}
-              className="w-5 h-5 accent-[#E31837]"
+              className="w-5 h-5 accent-red-500"
             />
             <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
               <Truck size={20} />
@@ -162,7 +162,7 @@ export default function CheckoutForm() {
           <label
             className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
               paymentMethod === "store"
-                ? "border-[#E31837] bg-red-50 ring-1 ring-[#E31837]"
+                ? "border-red-500 bg-red-50 ring-1 ring-red-500"
                 : "border-gray-200 hover:border-gray-300"
             }`}
           >
@@ -172,7 +172,7 @@ export default function CheckoutForm() {
               value="store"
               checked={paymentMethod === "store"}
               onChange={() => setPaymentMethod("store")}
-              className="w-5 h-5 accent-[#E31837]"
+              className="w-5 h-5 accent-red-500"
             />
             <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
               <Store size={20} />

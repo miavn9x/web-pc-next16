@@ -29,7 +29,7 @@ export default function CheckoutSteps({ currentStep }: CheckoutStepsProps) {
                     isCompleted
                       ? "bg-white text-green-600 border-green-600"
                       : isCurrent
-                      ? "bg-white text-[#E31837] border-[#E31837] shadow-sm ring-2 ring-red-50"
+                      ? "bg-white text-red-500 border-red-500 shadow-sm ring-2 ring-red-50"
                       : "bg-white text-gray-400 border-gray-300"
                   }`}
                 >
@@ -37,7 +37,7 @@ export default function CheckoutSteps({ currentStep }: CheckoutStepsProps) {
                 </div>
                 <div
                   className={`mt-2 w-auto px-2 text-center text-[10px] md:text-xs font-bold transition-colors duration-300 ${
-                    isCurrent ? "text-[#E31837]" : "text-gray-500"
+                    isCurrent ? "text-red-500" : "text-gray-500"
                   }`}
                 >
                   {step.name}

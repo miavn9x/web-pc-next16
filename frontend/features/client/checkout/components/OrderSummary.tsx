@@ -11,7 +11,7 @@ export default function CheckoutOrderSummary() {
     <div className="space-y-4 sticky top-24">
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <h3 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-          <ShoppingBag className="text-[#E31837]" size={20} />
+          <ShoppingBag className="text-red-500" size={20} />
           Đơn hàng ({cartItems.length} sản phẩm)
         </h3>
 
@@ -34,7 +34,7 @@ export default function CheckoutOrderSummary() {
                 <p className="text-sm font-medium text-gray-800 line-clamp-2">
                   {item.name}
                 </p>
-                <p className="text-[#E31837] font-bold text-sm mt-1">
+                <p className="text-red-500 font-bold text-sm mt-1">
                   {item.price.toLocaleString("vi-VN")}₫
                 </p>
               </div>
@@ -56,13 +56,13 @@ export default function CheckoutOrderSummary() {
           </div>
           <div className="flex justify-between items-center text-base pt-2 border-t border-gray-100 mt-2">
             <span className="font-bold text-gray-800">Tổng cộng</span>
-            <span className="block font-bold text-xl text-[#E31837]">
+            <span className="block font-bold text-xl text-red-500">
               {totalPrice.toLocaleString("vi-VN")}₫
             </span>
           </div>
         </div>
 
-        <button className="w-full mt-6 py-3.5 bg-[#E31837] text-white font-bold uppercase rounded-md hover:bg-[#c41530] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+        <button className="w-full mt-6 py-3.5 bg-red-500 text-white font-bold uppercase rounded-md hover:bg-[#c41530] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
           Xác nhận đặt hàng
         </button>
 
@@ -70,7 +70,7 @@ export default function CheckoutOrderSummary() {
           <input
             type="checkbox"
             id="terms"
-            className="mt-1 w-4 h-4 accent-[#E31837] rounded cursor-pointer"
+            className="mt-1 w-4 h-4 accent-red-500 rounded cursor-pointer"
             defaultChecked
           />
           <label
@@ -78,14 +78,13 @@ export default function CheckoutOrderSummary() {
             className="text-xs text-gray-500 cursor-pointer"
           >
             Tôi đồng ý với các{" "}
-            <span className="text-[#E31837] font-semibold hover:underline">
+            <span className="text-red-500 font-semibold hover:underline">
               điều khoản dịch vụ
             </span>{" "}
             và chính sách bảo mật.
           </label>
         </div>
       </div>
-
     </div>
   );
 }

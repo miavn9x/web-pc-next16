@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Trash2 } from "lucide-react";
+import { ChevronRight, Trash2, Home } from "lucide-react";
 import Link from "next/link";
 import CartItem from "./components/CartItem";
 import CartSummary from "./components/CartSummary";
@@ -26,7 +26,7 @@ export default function CartPage() {
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-500 mb-6 font-medium">
-            <Link href="/" className="hover:text-[#E31837] transition-colors">
+            <Link href="/" className="hover:text-red-500 transition-colors">
               Trang chủ
             </Link>
             <ChevronRight size={14} className="mx-2" />
@@ -42,12 +42,16 @@ export default function CartPage() {
     <div className="bg-gray-50 min-h-screen py-4">
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
-        <div className="flex items-center text-sm text-gray-500 mb-6 font-medium">
-          <Link href="/" className="hover:text-[#E31837] transition-colors">
+        <div className="flex items-center text-sm text-gray-500 mb-6 font-medium bg-white p-3 rounded-lg shadow-sm w-fit">
+          <Link
+            href="/"
+            className="hover:text-red-500 transition-colors flex items-center gap-1"
+          >
+            <Home size={16} />
             Trang chủ
           </Link>
           <ChevronRight size={14} className="mx-2" />
-          <span className="text-gray-800">Giỏ hàng của bạn</span>
+          <span className="text-red-500 font-bold">Giỏ hàng của bạn</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">

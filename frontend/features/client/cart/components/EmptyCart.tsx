@@ -18,7 +18,7 @@ export default function EmptyCart() {
       </p>
       <Link
         href="/"
-        className="px-8 py-3 bg-[#E31837] text-white font-bold rounded-lg hover:bg-[#c41530] transition-colors shadow-lg hover:shadow-xl uppercase tracking-wide"
+        className="px-8 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-[#c41530] transition-colors shadow-lg hover:shadow-xl uppercase tracking-wide"
       >
         Tiếp tục mua sắm
       </Link>

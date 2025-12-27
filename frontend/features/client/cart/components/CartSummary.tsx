@@ -29,7 +29,7 @@ export default function CartSummary({ subtotal, total }: CartSummaryProps) {
           <div className="flex justify-between items-center text-sm border-t border-dashed border-gray-200 pt-3">
             <span className="font-bold text-gray-800">Cần thanh toán</span>
             <div className="text-right">
-              <span className="block font-bold text-xl text-[#E31837]">
+              <span className="block font-bold text-xl text-red-500">
                 {total.toLocaleString("vi-VN")}₫
               </span>
               <span className="text-xs text-gray-500">(Đã bao gồm VAT)</span>
@@ -39,7 +39,7 @@ export default function CartSummary({ subtotal, total }: CartSummaryProps) {
 
         {total > 0 ? (
           <Link href="/checkout" className="w-full mb-3 block">
-            <button className="w-full py-3.5 bg-[#E31837] text-white font-bold uppercase rounded-md hover:bg-[#c41530] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group">
+            <button className="w-full py-3.5 bg-red-500 text-white font-bold uppercase rounded-md hover:bg-[#c41530] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group">
               <span>Tiến hành đặt hàng</span>
             </button>
           </Link>

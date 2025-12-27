@@ -62,7 +62,7 @@ const AuthButtons = () => {
             >
                 <User className="w-6 h-6 lg:w-[26px] lg:h-[26px] text-gray-700 lg:text-white" strokeWidth={1.5} />
                 <div className="hidden lg:flex flex-col leading-tight lg:text-white">
-                    <span className="text-[11px] opacity-80">Đăng nhập / Đăng ký</span>
+                    <span className="text-[11px] opacity-80">Đăng nhập</span>
                     <span className="text-[13px] font-semibold flex items-center gap-1">
                         Tài khoản <span className="text-[10px] opacity-60">▼</span>
                     </span>

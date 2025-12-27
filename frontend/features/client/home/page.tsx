@@ -1,5 +1,5 @@
 import Banner from "./components/banner/banner";
-import HotDeals from "./components/HotDeals";
+import HotDeals from "./components/fashsale/HotDeals";
 
 export default function Home() {
   return (

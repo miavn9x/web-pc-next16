@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import FlashSaleList from "./FlashSaleList";
 
 const PROMOS = [
   {
@@ -37,10 +38,10 @@ export default function HotDeals() {
   );
 
   return (
-    <section className="py-8">
+    <section className="pt-8">
       <div className="container mx-auto">
         {/* Top Decorative Banner - Mobile */}
-        <div className="flex justify-center relative z-10 -mb-[28px] pointer-events-none md:hidden">
+        <div className="flex justify-center relative z-10 -mb-[6.5%] pointer-events-none md:hidden">
           <Image
             src="/banner/bannet-05.2.png"
             alt="Hot Deals Header Mobile"
@@ -64,7 +65,7 @@ export default function HotDeals() {
         </div>
 
         {/* Top Decorative Banner - PC */}
-        <div className="justify-center relative z-10 -mb-[36px] pointer-events-none hidden lg:flex">
+        <div className="justify-center relative z-10 -mb-[35px] pointer-events-none hidden lg:flex">
           <Image
             src="/banner/bannet-05.png"
             alt="Hot Deals Header"
@@ -75,7 +76,7 @@ export default function HotDeals() {
           {HeaderContent}
         </div>
 
-        <div className="bg-[url('/banner/bannr-03.png')] bg-cover bg-center rounded-2xl p-6 md:p-10 shadow-2xl relative z-0 pt-10 md:pt-14">
+        <div className="bg-[url('/banner/bannr-03.png')] bg-cover bg-center rounded-2xl p-4 shadow-2xl relative z-0 pt-10 md:pt-14">
           {/* List Items - Grid on Desktop, Flex on Mobile */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {PROMOS.map((item) => (
@@ -107,6 +108,14 @@ export default function HotDeals() {
                 </div>
               </Link>
             ))}
+          </div>
+          <FlashSaleList />
+
+          {/* Button */}
+          <div className="flex justify-center mt-8">
+            <button className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-full hover:bg-yellow-500 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+              Xem thêm
+            </button>
           </div>
         </div>
       </div>

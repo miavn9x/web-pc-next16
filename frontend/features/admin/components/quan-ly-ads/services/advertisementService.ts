@@ -19,6 +19,10 @@ export interface Advertisement {
   link?: string;
   isActive: boolean;
   priority: number;
+  width?: number;
+  height?: number;
+  offsetPercent?: number;
+  offsetTop?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,6 +34,10 @@ export interface CreateAdvertisementDto {
   link?: string;
   isActive?: boolean;
   priority?: number;
+  width?: number;
+  height?: number;
+  offsetPercent?: number;
+  offsetTop?: number;
 }
 
 export interface UpdateAdvertisementDto {
@@ -39,6 +47,10 @@ export interface UpdateAdvertisementDto {
   link?: string;
   isActive?: boolean;
   priority?: number;
+  width?: number;
+  height?: number;
+  offsetPercent?: number;
+  offsetTop?: number;
 }
 
 class AdvertisementService {

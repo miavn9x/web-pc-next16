@@ -37,6 +37,18 @@ export class Advertisement {
   @Prop({ default: 0 })
   priority: number; // Ưu tiên hiển thị (số lớn hiện trước)
 
+  @Prop({ type: Number, required: false })
+  width?: number; // Chiều rộng (px) cho banner trái/phải
+
+  @Prop({ type: Number, required: false })
+  height?: number; // Chiều cao (px) cho banner trái/phải
+
+  @Prop({ type: Number, required: false, default: 47 })
+  offsetPercent?: number; // % offset từ center (cho left/right banner)
+
+  @Prop({ type: Number, required: false, default: 50 })
+  offsetTop?: number; // % top position (cho left/right banner)
+
   @Prop({ type: Date })
   createdAt: Date;
 

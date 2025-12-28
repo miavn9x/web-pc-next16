@@ -15,6 +15,12 @@ export class AdvertisementService {
   // --- Tạo quảng cáo mới ---
   async create(dto: CreateAdvertisementDto) {
     const code = `ADV${Date.now()}`; // Simple unique code generation
+
+    // Nếu banner mới là active, deactivate các banner khác cùng position
+    if (dto.isActive === true) {
+      await this.adModel.updateMany({ position: dto.position }, { isActive: false }).exec();
+    }
+
     const created = new this.adModel({ ...dto, code });
     const saved = await created.save();
     return {
@@ -63,6 +69,24 @@ export class AdvertisementService {
 
   // --- Cập nhật ---
   async update(code: string, dto: UpdateAdvertisementDto) {
+    // Nếu đang active banner này, deactivate các banner khác cùng position
+    if (dto.isActive === true) {
+      // Lấy thông tin banner hiện tại để biết position
+      const currentAd = await this.adModel.findOne({ code }).exec();
+      if (currentAd) {
+        // Deactivate tất cả banner khác cùng position
+        await this.adModel
+          .updateMany(
+            {
+              position: currentAd.position,
+              code: { $ne: code }, // Không phải banner hiện tại
+            },
+            { isActive: false },
+          )
+          .exec();
+      }
+    }
+
     const updated = await this.adModel.findOneAndUpdate({ code }, dto, { new: true }).exec();
     if (!updated) {
       throw new Error('Advertisement not found');

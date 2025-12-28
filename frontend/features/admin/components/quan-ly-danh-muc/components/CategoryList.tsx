@@ -122,7 +122,7 @@ const CategoryList = ({
       {/* Main Content Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Toolbar */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-4">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <input
@@ -170,7 +170,7 @@ const CategoryList = ({
           </div>
 
           {/* Filters */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={filterActive}
               onChange={(e) => setFilterActive(e.target.value as any)}
@@ -192,8 +192,8 @@ const CategoryList = ({
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -384,25 +384,181 @@ const CategoryList = ({
               )}
             </tbody>
           </table>
+        </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <span className="text-sm text-gray-500">
-              Hiển thị{" "}
-              <strong className="text-gray-900">
-                {filteredCategories.length}
-              </strong>{" "}
-              kết quả
-            </span>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Xóa bộ lọc tìm kiếm
-              </button>
-            )}
-          </div>
+        {/* Mobile Card View */}
+        <div className="md:hidden">
+          {filteredCategories.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-gray-900 font-medium">
+                Không tìm thấy danh mục
+              </h3>
+              <p className="text-gray-500 text-sm mt-1">
+                Thử thay đổi bộ lọc hoặc tìm kiếm từ khóa khác.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 divide-y divide-gray-100">
+              {filteredCategories.map((category) => {
+                const isDeleting = deleting === category.code;
+                const childrenNames = getChildrenNames(category);
+
+                return (
+                  <div
+                    key={category.code}
+                    className="p-4 bg-white flex flex-col gap-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 shrink-0 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shadow-sm border border-blue-100">
+                          {category.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {category.name}
+                          </h3>
+                          <code className="text-xs text-gray-400 font-mono mt-0.5 block">
+                            {category.code.split("-").slice(-2).join("-")}
+                          </code>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          onToggleActive(category.code, category.isActive)
+                        }
+                        className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border ${
+                          category.isActive
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-gray-50 text-gray-600 border-gray-200"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            category.isActive ? "bg-green-500" : "bg-gray-400"
+                          }`}
+                        ></span>
+                        {category.isActive ? "Hiển thị" : "Đang ẩn"}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      {childrenNames ? (
+                        <>
+                          <span className="shrink-0 text-gray-400">Con:</span>
+                          <span className="line-clamp-1">{childrenNames}</span>
+                          <span className="shrink-0 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                            +{category.children?.length}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400 italic text-xs">
+                          Không có danh mục con
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1 pt-3 border-t border-gray-50">
+                      {category.priceRanges &&
+                      category.priceRanges.length > 0 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                          {category.priceRanges.length} mức giá
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          Chưa cấu hình giá
+                        </span>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onEdit(category)}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                        >
+                          Chỉnh sửa
+                        </button>
+                        <button
+                          onClick={() => onDelete(category.code, category.name)}
+                          disabled={isDeleting}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {isDeleting ? (
+                            <svg
+                              className="animate-spin w-5 h-5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                          ) : (
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+          <span className="text-sm text-gray-500">
+            Hiển thị{" "}
+            <strong className="text-gray-900">
+              {filteredCategories.length}
+            </strong>{" "}
+            kết quả
+          </span>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Xóa bộ lọc tìm kiếm
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -46,4 +46,20 @@ export class CreateAdvertisementDto {
   @IsNumber()
   @IsOptional()
   priority?: number;
+
+  @IsNumber()
+  @IsOptional()
+  width?: number;
+
+  @IsNumber()
+  @IsOptional()
+  height?: number;
+
+  @IsNumber()
+  @IsOptional()
+  offsetPercent?: number;
+
+  @IsNumber()
+  @IsOptional()
+  offsetTop?: number;
 }

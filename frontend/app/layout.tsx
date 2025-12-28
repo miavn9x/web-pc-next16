@@ -39,7 +39,7 @@ export default async function RootLayout({
 }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <AuthModalProvider>
           <CartProvider>
             <Suspense fallback={null}>

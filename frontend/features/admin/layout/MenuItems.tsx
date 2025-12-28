@@ -74,17 +74,17 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
   };
 
   const menuSections: MenuSection[] = [
-    {
-      title: "HƯỚNG DẪN",
-      items: [
-        {
-          id: "guide-center",
-          icon: BookOpen,
-          label: "Trung tâm HD",
-          page: "guide-center",
-        },
-      ],
-    },
+    // {
+    //   title: "HƯỚNG DẪN",
+    //   items: [
+    //     {
+    //       id: "guide-center",
+    //       icon: BookOpen,
+    //       label: "Trung tâm HD",
+    //       page: "guide-center",
+    //     },
+    //   ],
+    // },
     {
       title: "TỔNG QUAN",
       items: [
@@ -116,6 +116,11 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
             { label: "Thêm sản phẩm", page: "products-add" },
           ],
         },
+      ],
+    },
+    {
+      title: "QUẢN LÝ DANH MỤC",
+      items: [
         {
           id: "categories",
           icon: FolderTree,

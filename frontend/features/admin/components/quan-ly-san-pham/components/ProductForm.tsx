@@ -146,10 +146,6 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
     return Number((((original - price) / original) * 100).toFixed(1));
   };
 
-  // Handle discounted price change (Reverse calculation) - Keep for compatibility or remove if unused in new logic
-  // keeping it just in case, but the new logic uses calculateDiscount inline.
-  const discountedPrice = formData.price; // Just binding directly now
-
   // Helper: Get full image URL
   const getImageUrl = (url?: string) => {
     if (!url) return "/img/logow.jpeg";
@@ -160,143 +156,170 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {isEdit ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm mới"}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {isEdit
-            ? "Cập nhật thông tin sản phẩm"
-            : "Điền thông tin bên dưới. Các trường có dấu * là bắt buộc."}
+    <div className="max-w-full p-4 mx-auto space-y-6 pb-20">
+      {/* Header */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <button
+            onClick={() => onSuccess?.()}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </button>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEdit ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm mới"}
+          </h2>
+        </div>
+        <p className="text-gray-500 ml-10">
+          Điền thông tin bên dưới. Các trường có dấu{" "}
+          <span className="text-red-500">*</span> là bắt buộc.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Basic Info */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               1
-            </span>
-            Thông tin cơ bản
-          </h3>
+            </div>
+            <h3 className="font-semibold text-gray-900">Thông tin cơ bản</h3>
+          </div>
 
-          <div className="space-y-4">
+          <div className="p-6 space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tên sản phẩm <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.name ? "border-red-500 bg-red-50" : "border-gray-300"
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm text-base ${
+                  errors.name
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 placeholder="VD: PC Gaming Ultra Instinct (i9-13900K / RTX 4090 / 64GB RAM)"
               />
               {errors.name && (
-                <p className="mt-1.5 text-sm text-red-600">{errors.name}</p>
+                <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {errors.name}
+                </p>
               )}
             </div>
 
-            {/* Category 3-Level Selection */}
+            {/* Category Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Danh mục <span className="text-red-500">*</span>
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Level 1 */}
-                <div>
-                  <select
-                    value={selectedL1}
-                    onChange={(e) => handleL1Change(e.target.value)}
-                    disabled={loadingCategories}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.categoryCode && !selectedL1
-                        ? "border-red-500 bg-red-50"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    <option value="">-- Danh mục chính --</option>
-                    {categoryTree.map((cat) => (
-                      <option key={cat.code} value={cat.code}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={selectedL1}
+                  onChange={(e) => handleL1Change(e.target.value)}
+                  disabled={loadingCategories}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm bg-white cursor-pointer hover:border-blue-400"
+                >
+                  <option value="">-- Danh mục chính --</option>
+                  {categoryTree.map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
 
                 {/* Level 2 */}
-                <div>
-                  <select
-                    value={selectedL2}
-                    onChange={(e) => handleL2Change(e.target.value)}
-                    disabled={!selectedL1 || getL2Options().length === 0}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.categoryCode &&
-                      selectedL1 &&
-                      !selectedL2 &&
-                      getL2Options().length > 0
-                        ? "border-red-500 bg-red-50"
-                        : "border-gray-300"
-                    } ${
-                      !selectedL1 || getL2Options().length === 0
-                        ? "bg-gray-100 text-gray-400"
-                        : ""
-                    }`}
-                  >
-                    <option value="">-- Danh mục con --</option>
-                    {getL2Options().map((cat) => (
-                      <option key={cat.code} value={cat.code}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={selectedL2}
+                  onChange={(e) => handleL2Change(e.target.value)}
+                  disabled={!selectedL1 || getL2Options().length === 0}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm cursor-pointer ${
+                    !selectedL1 || getL2Options().length === 0
+                      ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "bg-white border-gray-200 hover:border-blue-400"
+                  }`}
+                >
+                  <option value="">-- Danh mục con --</option>
+                  {getL2Options().map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
 
                 {/* Level 3 */}
-                <div>
-                  <select
-                    value={selectedL3}
-                    onChange={(e) => handleL3Change(e.target.value)}
-                    disabled={!selectedL2 || getL3Options().length === 0}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      !selectedL2 || getL3Options().length === 0
-                        ? "bg-gray-100 text-gray-400"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    <option value="">-- Danh mục cháu --</option>
-                    {getL3Options().map((cat) => (
-                      <option key={cat.code} value={cat.code}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={selectedL3}
+                  onChange={(e) => handleL3Change(e.target.value)}
+                  disabled={!selectedL2 || getL3Options().length === 0}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm cursor-pointer ${
+                    !selectedL2 || getL3Options().length === 0
+                      ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "bg-white border-gray-200 hover:border-blue-400"
+                  }`}
+                >
+                  <option value="">-- Danh mục cháu --</option>
+                  {getL3Options().map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {errors.categoryCode && (
-                <p className="mt-1.5 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                   {errors.categoryCode}
-                </p>
-              )}
-              {loadingCategories && (
-                <p className="mt-1.5 text-xs text-blue-500">
-                  Đang tải danh mục...
                 </p>
               )}
             </div>
 
-            {/* Brand & Price Range Split */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Price Range (Derived from Root Category) */}
+            {/* Brand & Price Range */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Khoảng giá (Theo danh mục)
                 </label>
                 <select
@@ -310,10 +333,10 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                     });
                   }}
                   disabled={!selectedL1}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm cursor-pointer ${
                     !selectedL1
-                      ? "bg-gray-100 text-gray-400"
-                      : "border-gray-300"
+                      ? "bg-gray-50 text-gray-400 border-gray-200"
+                      : "bg-white border-gray-200 hover:border-blue-400"
                   }`}
                 >
                   <option value="">-- Chọn khoảng giá --</option>
@@ -329,22 +352,21 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                   })()}
                 </select>
                 {!selectedL1 && (
-                  <p className="mt-1 text-xs text-orange-500">
+                  <p className="mt-1.5 text-xs text-amber-600">
                     * Vui lòng chọn danh mục chính trước
                   </p>
                 )}
               </div>
 
-              {/* Brand */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Thương hiệu
                 </label>
                 <input
                   type="text"
                   value={formData.brand || ""}
                   onChange={(e) => updateField("brand", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:border-blue-400"
                   placeholder="VD: ASUS, MSI, Custom Build..."
                 />
               </div>
@@ -353,18 +375,18 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
         </div>
 
         {/* Section 2: Price & Discount */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               2
-            </span>
-            Giá & Khuyến mãi
-          </h3>
+            </div>
+            <h3 className="font-semibold text-gray-900">Giá & Khuyến mãi</h3>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 1. Original Price (Giá Gốc) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Giá gốc
               </label>
               <input
@@ -374,7 +396,6 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                   const newOriginal = Number(e.target.value);
                   updateField("originalPrice", newOriginal);
 
-                  // Update Price based on new Original and current Discount
                   if (formData.discount && formData.discount > 0) {
                     const newPrice = calculatePrice(
                       newOriginal,
@@ -382,16 +403,15 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                     );
                     updateField("price", newPrice);
                   } else {
-                    // No discount, price = original
                     updateField("price", newOriginal);
                   }
                 }}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm ${
                   errors.originalPrice
                     ? "border-red-500 bg-red-50"
-                    : "border-gray-300"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
-                placeholder="VD: 95,000,000"
+                placeholder="VD: 95000000"
               />
               {errors.originalPrice && (
                 <p className="mt-1.5 text-sm text-red-600">
@@ -402,7 +422,7 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
 
             {/* 2. Discount (% Giảm giá) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 % Giảm giá
               </label>
               <div className="relative">
@@ -413,8 +433,6 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                   value={formData.discount || ""}
                   onChange={(e) => {
                     let newDiscount = Number(e.target.value);
-
-                    // Enforce max 100
                     if (newDiscount > 100) newDiscount = 100;
                     if (newDiscount < 0) newDiscount = 0;
 
@@ -425,7 +443,6 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                         : newDiscount
                     );
 
-                    // Update Price based on Original and new Discount
                     if (formData.originalPrice) {
                       const newPrice = calculatePrice(
                         formData.originalPrice,
@@ -434,22 +451,18 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                       updateField("price", newPrice);
                     }
                   }}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.discount
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300 pr-12"
                   placeholder="0"
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500">%</span>
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <span className="text-gray-500 font-medium">%</span>
                 </div>
               </div>
             </div>
 
             {/* 3. Price (Giá sau giảm) */}
             <div>
-              <label className="block text-sm text-red-600 mb-1.5 font-bold">
+              <label className="block text-sm font-bold text-red-600 mb-2">
                 Giá sau giảm <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -460,7 +473,6 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                     const newPrice = Number(e.target.value);
                     updateField("price", newPrice);
 
-                    // Update Discount based on Original and new Price
                     if (formData.originalPrice && formData.originalPrice > 0) {
                       const newDiscount = calculateDiscount(
                         formData.originalPrice,
@@ -468,20 +480,19 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                       );
                       updateField("discount", newDiscount);
                     } else {
-                      // If no original price, set original = price
                       updateField("originalPrice", newPrice);
                       updateField("discount", 0);
                     }
                   }}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-semibold text-red-600 ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-bold text-red-600 pr-16 ${
                     errors.price
                       ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
-                  placeholder="VD: 85,000,000"
+                  placeholder="VD: 85000000"
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500">vnđ</span>
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <span className="text-gray-500 font-medium">vnđ</span>
                 </div>
               </div>
               {errors.price && (
@@ -492,248 +503,318 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
         </div>
 
         {/* Section 3: Media */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               3
-            </span>
-            Hình ảnh
-          </h3>
+            </div>
+            <h3 className="font-semibold text-gray-900">Hình ảnh</h3>
+          </div>
 
-          {/* Cover Image */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ảnh đại diện
-            </label>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {formData.cover ? (
-                <div className="relative w-full sm:w-48 h-48 rounded-lg overflow-hidden border-2 border-gray-200">
-                  <img
-                    src={getImageUrl(formData.cover.url)}
-                    alt="Cover"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCoverDelete}
-                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => coverInputRef.current?.click()}
-                  className="w-full sm:w-48 h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
-                >
-                  <svg
-                    className="w-12 h-12 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
+          <div className="p-6 space-y-6">
+            {/* Cover Image */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Ảnh đại diện
+              </label>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {formData.cover ? (
+                  <div className="relative w-full sm:w-56 aspect-4/3 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm group">
+                    <img
+                      src={getImageUrl(formData.cover.url)}
+                      alt="Cover"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
-                  </svg>
-                  <p className="mt-2 text-sm text-gray-500">Click để upload</p>
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <button
+                      type="button"
+                      onClick={handleCoverDelete}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-700 shadow-lg"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      Ảnh đại diện
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => coverInputRef.current?.click()}
+                    className="w-full sm:w-56 aspect-4/3 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all bg-gray-50 group"
+                  >
+                    <div className="p-4 bg-white rounded-full shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                      <svg
+                        className="w-8 h-8 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
+                      Click để upload
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP</p>
+                  </div>
+                )}
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCoverUpload(file);
+                  }}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Thư viện ảnh
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                {formData.gallery.map((item, index) => (
+                  <div
+                    key={index}
+                    className="relative w-full aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm group"
+                  >
+                    <img
+                      src={getImageUrl(item.url)}
+                      alt={`Gallery ${index + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <button
+                      type="button"
+                      onClick={() => handleGalleryDelete(item.mediaCode)}
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-all hover:bg-red-700 shadow-lg"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <div
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all bg-gray-50 group"
+                >
+                  <div className="p-2 bg-white rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                    <svg
+                      className="w-6 h-6 text-gray-400 group-hover:text-blue-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-medium text-gray-500 group-hover:text-blue-600">
+                    Thêm ảnh con
+                  </p>
                 </div>
-              )}
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                💡 Mẹo: Có thể chọn nhiều ảnh cùng lúc
+              </p>
               <input
-                ref={coverInputRef}
+                ref={galleryInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleCoverUpload(file);
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) handleGalleryUpload(files);
                 }}
                 className="hidden"
               />
             </div>
           </div>
-
-          {/* Gallery */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Thư viện ảnh
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {formData.gallery.map((item, index) => (
-                <div
-                  key={index}
-                  className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200"
-                >
-                  <img
-                    src={getImageUrl(item.url)}
-                    alt={`Gallery ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleGalleryDelete(item.mediaCode)}
-                    className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
-              <div
-                onClick={() => galleryInputRef.current?.click()}
-                className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
-              >
-                <svg
-                  className="w-8 h-8 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <p className="mt-1 text-xs text-gray-500">Thêm ảnh</p>
-              </div>
-            </div>
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                if (files.length > 0) handleGalleryUpload(files);
-              }}
-              className="hidden"
-            />
-          </div>
         </div>
 
         {/* Section 4: Specs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               4
-            </span>
-            Thông số kỹ thuật
-          </h3>
-          <SpecsEditor specs={formData.specs} onChange={handleSpecsChange} />
+            </div>
+            <h3 className="font-semibold text-gray-900">Thông số kỹ thuật</h3>
+          </div>
+          <div className="p-6">
+            <SpecsEditor specs={formData.specs} onChange={handleSpecsChange} />
+          </div>
         </div>
 
         {/* Section 5: Description & Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               5
-            </span>
-            Bài viết & Mô tả
-          </h3>
+            </div>
+            <h3 className="font-semibold text-gray-900">Bài viết & Mô tả</h3>
+          </div>
 
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             {/* Short Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Mô tả ngắn (Description)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mô tả ngắn (SEO)
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Mô tả tóm tắt cho SEO và thẻ danh sách..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all shadow-sm hover:border-gray-300"
+                placeholder="Mô tả tóm tắt sản phẩm hiển thị trên Google và danh sách..."
               />
             </div>
 
             {/* Content (HTML) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Nội dung chi tiết (Content)
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Nội dung chi tiết
+                </label>
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md font-medium">
+                  Hỗ trợ HTML cơ bản
+                </span>
+              </div>
+
               <textarea
                 value={formData.content || ""}
                 onChange={(e) => updateField("content", e.target.value)}
-                rows={10}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                placeholder="Nhập nội dung đầy đủ của bài viết... (Hỗ trợ HTML)"
+                rows={12}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm transition-all shadow-sm hover:border-gray-300"
+                placeholder="Nhập nội dung bài viết..."
               />
-              <p className="mt-2 text-xs text-gray-500">
-                💡 Hỗ trợ HTML. Ví dụ: &lt;h1&gt;, &lt;p&gt;, &lt;ul&gt;,
-                &lt;li&gt;, &lt;strong&gt;...
-              </p>
             </div>
           </div>
         </div>
 
         {/* Section 6: Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 text-sm font-bold">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               6
-            </span>
-            Cài đặt
-          </h3>
-          <div className="space-y-3">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => updateField("isActive", e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-3 text-sm font-medium text-gray-700">
-                ✓ Kích hoạt sản phẩm
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isFeatured}
-                onChange={(e) => updateField("isFeatured", e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-3 text-sm font-medium text-gray-700">
-                ⭐ Đánh dấu nổi bật
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isBuildPc || false}
-                onChange={(e) => updateField("isBuildPc", e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-3 text-sm font-medium text-gray-700">
-                🛠️ Chỉ dùng cho Build PC
-              </span>
-            </label>
+            </div>
+            <h3 className="font-semibold text-gray-900">Cài đặt hiển thị</h3>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <label className="flex items-center p-4 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-all hover:border-blue-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => updateField("isActive", e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">
+                    Kích hoạt sản phẩm
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Hiển thị sản phẩm này trên web
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-center p-4 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-all hover:border-blue-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isFeatured}
+                  onChange={(e) => updateField("isFeatured", e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">
+                    Đánh dấu nổi bật
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Gắn nhãn HOT & đưa lên đầu
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-center p-4 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-all hover:border-blue-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isBuildPc || false}
+                  onChange={(e) => updateField("isBuildPc", e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">
+                    Linh kiện Build PC
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Chỉ dùng trong menu Build PC
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => onSuccess?.()}
-            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting
-              ? "Đang lưu..."
-              : isEdit
-              ? "Cập nhật sản phẩm"
-              : "Tạo sản phẩm"}
-          </button>
+        {/* Floating Footer Actions */}
+        <div className="sticky bottom-4 z-10 mx-auto max-w-5xl">
+          <div className="bg-white/90 backdrop-blur shadow-lg border border-gray-200 p-4 rounded-2xl flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => onSuccess?.()}
+              className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              Hủy bỏ
+            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none transform active:scale-95"
+              >
+                {submitting
+                  ? "Đang lưu..."
+                  : isEdit
+                  ? "Cập nhật sản phẩm"
+                  : "Tạo sản phẩm mới"}
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </div>

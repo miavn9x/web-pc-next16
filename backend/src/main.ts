@@ -32,6 +32,8 @@ async function bootstrap() {
     helmet({
       // Tắt CSP vì backend API không serve HTML
       contentSecurityPolicy: false,
+      // Cho phép load tài nguyên (ảnh) từ domain khác (frontend)
+      crossOriginResourcePolicy: false,
 
       // Giữ các headers bảo mật quan trọng khác:
       // - X-Frame-Options: SAMEORIGIN (chống clickjacking)

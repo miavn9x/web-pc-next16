@@ -1,22 +1,21 @@
-import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ProductController } from './controllers/product.controller';
 import { Product, ProductSchema } from './schemas/product.schema';
+import { Category, CategorySchema } from './categories/schemas/category.schema';
 import { ProductService } from './services/product.service';
+import { AdminProductController, ProductController } from './controllers/product.controller';
+import { CategoryModule } from './categories/category.module';
 
-// --- [Module Definition] ---
 @Module({
-  // --- [Schema Mongoose] ---
   imports: [
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
-    CacheModule.register(),
+    MongooseModule.forFeature([
+      { name: Product.name, schema: ProductSchema },
+      { name: Category.name, schema: CategorySchema },
+    ]),
+    CategoryModule,
   ],
-
-  // --- [Controllers] ---
-  controllers: [ProductController],
-
-  // --- [Providers] ---
+  controllers: [AdminProductController, ProductController],
   providers: [ProductService],
+  exports: [ProductService],
 })
 export class ProductModule {}

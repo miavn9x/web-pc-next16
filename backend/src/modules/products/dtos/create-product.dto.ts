@@ -1,95 +1,86 @@
-// --- Imports ---
-import { Type } from 'class-transformer';
 import {
-  IsArray,
+  IsString,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
+  IsArray,
   IsObject,
-  IsString,
-  Max,
   Min,
-  ValidateNested,
+  Max,
+  IsBoolean,
 } from 'class-validator';
 
-// --- [MultilangStringDto] ---
-class MultilangStringDto {
+export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
-  vi: string;
+  name: string;
 
   @IsString()
   @IsNotEmpty()
-  ja: string;
-}
+  categoryCode: string;
 
-// --- [PriceDetailDto] ---
-class PriceDetailDto {
+  @IsString()
+  @IsOptional()
+  brand?: string;
+
   @IsNumber()
   @Min(0)
-  original: number;
+  price: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  originalPrice?: number;
 
   @IsNumber()
   @Min(0)
   @Max(100)
-  discountPercent: number;
-}
-
-// --- [PriceMultilangDto] ---
-class PriceMultilangDto {
-  @ValidateNested()
-  @Type(() => PriceDetailDto)
-  vi: PriceDetailDto;
-
-  @ValidateNested()
-  @Type(() => PriceDetailDto)
-  ja: PriceDetailDto;
-}
-
-// --- [VariantDto] ---
-class VariantDto {
-  @ValidateNested()
-  @Type(() => MultilangStringDto)
-  label: MultilangStringDto;
-
-  @ValidateNested()
-  @Type(() => PriceMultilangDto)
-  price: PriceMultilangDto;
-}
-
-// --- [GalleryItemDto] ---
-class GalleryItemDto {
-  @IsString()
-  mediaCode: string;
-
-  @IsString()
-  url: string;
-}
-
-// --- [CreateProductDto] ---
-export class CreateProductDto {
-  @IsNumber()
-  category: number;
-
-  @ValidateNested()
-  @Type(() => MultilangStringDto)
-  name: MultilangStringDto;
-
-  @ValidateNested()
-  @Type(() => MultilangStringDto)
-  description: MultilangStringDto;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => GalleryItemDto)
-  gallery: GalleryItemDto[];
+  @IsOptional()
+  discount?: number;
 
   @IsObject()
-  @ValidateNested()
-  @Type(() => GalleryItemDto)
-  cover: GalleryItemDto;
+  @IsOptional()
+  cover?: {
+    url: string;
+    mediaCode: string;
+  };
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => VariantDto)
-  variants: VariantDto[];
+  @IsOptional()
+  gallery?: Array<{
+    url: string;
+    mediaCode: string;
+  }>;
+
+  @IsArray()
+  @IsOptional()
+  specs?: Array<{
+    label: string;
+    value: string;
+    showInListing: boolean;
+  }>;
+
+  @IsObject()
+  @IsOptional()
+  filters?: Record<string, any>;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  content?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isFeatured?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isBuildPc?: boolean;
 }

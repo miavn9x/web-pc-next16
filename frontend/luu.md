@@ -342,3 +342,8 @@ Khi chọn danh mục, Form sẽ tự động hiện các ô nhập này:
   ]
 }
 ```
+
+
+
+tao cân categories theo khi tao danh mục sẻ có dât dang nhu nay.
+luu ý children ca tôi da tạo được 2 children con không giới hạn

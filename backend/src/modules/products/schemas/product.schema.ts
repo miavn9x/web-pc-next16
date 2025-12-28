@@ -1,155 +1,126 @@
-// --- [Thư viện] ---
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type ProductDocument = Product & Document;
-
-// --- [Danh mục sản phẩm đa ngôn ngữ] ---
-const ProductCategoryEnum = {
-  1: { vi: 'banh-trang', ja: 'バインチャン' },
-  2: { vi: 'cac-loai-kho', ja: '乾物類' },
-  3: { vi: 'do-an-vat', ja: 'スナック' },
-  4: { vi: 'trai-cay', ja: '果物' },
-} as const;
-
-export const ProductCategoryKeys = Object.keys(ProductCategoryEnum);
-
-// --- [Schema phụ trợ] ---
-
-// --- [MultilangString] ---
-@Schema({ _id: false })
-class MultilangString {
-  // Giá trị tiếng Việt
-  @Prop({ required: true, default: '' })
-  vi: string;
-
-  // Giá trị tiếng Nhật
-  @Prop({ required: true, default: '' })
-  ja: string;
-}
-
-// --- [PriceDetail SubSchema] ---
-@Schema({ _id: false })
-class PriceDetail {
-  // Giá gốc của biến thể
-  @Prop({ required: true, min: 0, default: 0 })
-  original: number;
-
-  // Phần trăm giảm giá (0–100)
-  @Prop({ required: true, min: 0, max: 100, default: 0 })
-  discountPercent: number;
-}
-
-// --- [PriceMultilang] ---
-@Schema({ _id: false })
-class PriceMultilang {
-  // Giá và giảm giá tiếng Việt
-  @Prop({ type: PriceDetail, required: true })
-  vi: PriceDetail;
-
-  // Giá và giảm giá tiếng Nhật
-  @Prop({ type: PriceDetail, required: true })
-  ja: PriceDetail;
-}
-
-// --- [Variant] ---
-@Schema({ _id: false })
-class Variant {
-  // Tên hiển thị biến thể (đa ngôn ngữ)
-  @Prop({ type: MultilangString, required: true })
-  label: MultilangString;
-
-  // Giá bán theo từng ngôn ngữ
-  @Prop({ type: PriceMultilang, required: true })
-  price: PriceMultilang;
-}
-
-// --- [Schema chính] ---
-
-@Schema({ timestamps: true, collection: 'products' })
-export class Product {
-  // Danh mục sản phẩm (đa ngôn ngữ - chỉ cần truyền key)
-  @Prop({
-    type: Number,
-    required: true,
-    validate: {
-      validator: (value: number) => ProductCategoryKeys.includes(String(value)),
-      message: () => `Danh mục không hợp lệ`,
-    },
-  })
-  category: number;
-
-  // Mã sản phẩm duy nhất
-  @Prop({ required: true, unique: true })
+@Schema({ timestamps: true })
+export class Product extends Document {
+  @Prop({ required: true, unique: true, uppercase: true })
   productCode: string;
 
-  // Tên sản phẩm (đa ngôn ngữ)
-  @Prop({ type: MultilangString, required: true })
-  name: MultilangString;
+  @Prop({ required: true })
+  name: string;
 
-  // Mô tả chi tiết sản phẩm (đa ngôn ngữ)
-  @Prop({ type: MultilangString, required: true })
-  description: MultilangString;
+  // === CATEGORY INTEGRATION ===
+  @Prop({ required: true })
+  categoryCode: string;
 
-  // Danh sách ảnh minh hoạ
-  @Prop({ type: [Object], required: true })
-  gallery: {
-    mediaCode: string;
-    url: string;
-  }[];
+  @Prop()
+  categorySlug: string;
 
-  // Ảnh đại diện chính
-  @Prop({ required: true, type: Object })
+  @Prop()
+  subcategory: string;
+
+  @Prop()
+  subcategorySlug: string;
+
+  @Prop({ type: [Object], default: [] })
+  categoryPriceRanges: Array<{
+    label: string;
+    min: number;
+    max: number | null;
+  }>;
+
+  // === BASIC INFO ===
+  @Prop()
+  brand?: string;
+
+  @Prop({ required: true, min: 0 })
+  price: number;
+
+  @Prop({ min: 0 })
+  originalPrice?: number;
+
+  @Prop({ min: 0, max: 100 })
+  discount?: number;
+
+  // === MEDIA ===
+  @Prop({ type: Object })
   cover: {
-    mediaCode: string;
     url: string;
+    mediaCode: string;
   };
 
-  // Khoảng giá từ các biến thể (min-max)
-  @Prop({
-    type: {
-      vi: { min: String, max: String },
-      ja: { min: String, max: String },
-    },
-    required: true,
-    _id: false,
-  })
-  priceRange: {
-    vi: { min: string; max: string };
-    ja: { min: string; max: string };
-  };
+  @Prop({ type: [Object], default: [] })
+  gallery: Array<{
+    url: string;
+    mediaCode: string;
+  }>;
 
-  // Danh sách các biến thể của sản phẩm
-  @Prop({ type: [Variant], required: true })
-  variants: Variant[];
+  // === SEO ===
+  @Prop({ required: true, unique: true })
+  slug: string;
 
-  // Token tìm kiếm (đa ngôn ngữ)
-  @Prop({
-    type: {
-      vi: [String],
-      ja: [String],
-    },
-    required: true,
-    default: { vi: [], ja: [] },
-    _id: false,
-  })
-  tokens: {
-    vi: string[];
-    ja: string[];
-  };
+  @Prop({ index: 'text' })
+  searchKey: string;
 
-  // Ngày tạo
-  @Prop({ type: Date })
-  createdAt: Date;
+  // === DYNAMIC SPECS ===
+  @Prop({ type: [Object], default: [] })
+  specs: Array<{
+    label: string;
+    value: string;
+    order: number;
+    showInListing: boolean;
+  }>;
 
-  // Ngày cập nhật gần nhất
-  @Prop({ type: Date })
-  updatedAt: Date;
+  // === FILTERS (Price Range) ===
+  @Prop({ type: Object, default: {} })
+  filters: Record<string, any>;
+
+  // === DESCRIPTION ===
+  @Prop({ type: String })
+  description: string;
+
+  @Prop({ type: String })
+  content: string;
+
+  // === STATUS ===
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ default: false })
+  isFeatured: boolean;
+
+  @Prop({ default: false })
+  isBuildPc: boolean;
+
+  @Prop({ default: 0 })
+  viewCount: number;
+
+  @Prop({ default: 0 })
+  soldCount: number;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
-ProductSchema.index({ category: 1, createdAt: -1 });
-ProductSchema.index({ category: 1, updatedAt: -1 });
 
-ProductSchema.index({ 'variants.variantCode': 1 });
-ProductSchema.index({ 'tokens.vi': 'text', 'tokens.ja': 'text' });
+// Virtual fields
+ProductSchema.virtual('discountedPrice').get(function (this: Product) {
+  if (this.discount && this.discount > 0) {
+    return Math.round(this.price * (1 - this.discount / 100));
+  }
+  return this.price;
+});
+
+// Indexes
+ProductSchema.index({ productCode: 1 }, { unique: true });
+ProductSchema.index({ slug: 1 }, { unique: true });
+ProductSchema.index({ categoryCode: 1 });
+ProductSchema.index({ searchKey: 'text' });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ 'specs.label': 1, 'specs.value': 1 });
+
+// Ensure virtuals are included in JSON
+ProductSchema.set('toJSON', { virtuals: true });
+ProductSchema.set('toObject', { virtuals: true });

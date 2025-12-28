@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 
 import { useAdminPage } from "../contexts/AdminPageContext";
 import OrderManagement from "../components/quan-ly-don-hang/OrderManagement";
-import ProductsEdit from "../components/quan-ly-san-pham/ProductsEdit";
-import ProductsList from "../components/quan-ly-san-pham/ProductsList";
-import ProductsAdd from "../components/quan-ly-san-pham/ProductsAdd";
+import ProductManager from "../components/quan-ly-san-pham/ProductManager";
 import PostsList from "../components/quan-ly-noi-dung/PostsList";
 import CreatePost from "../components/quan-ly-noi-dung/CreatePost";
 import EditPost from "../components/quan-ly-noi-dung/EditPost";
@@ -16,20 +14,16 @@ import DashboardStats from "../dashboard/DashboardStats";
 import CustomersManagement from "../components/quan-ly-khach-hang/CustomersManagement";
 import GuideCenter from "../components/guide/GuideCenter";
 import AdsManager from "../components/quan-ly-ads/AdsManager";
+import CategoryManager from "../components/quan-ly-danh-muc/CategoryManager";
 
 const AdminContent = () => {
   const { currentPage, setCurrentPage } = useAdminPage();
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
 
   // Reset editing state when switching pages
   useEffect(() => {
-    setEditingProductId(null);
     setEditingCouponId(null);
   }, [currentPage]);
-
-  const handleEditProduct = (id: string) => setEditingProductId(id);
-  const handleBackToProductList = () => setEditingProductId(null);
 
   const handleEditCoupon = (id: string) => setEditingCouponId(id);
   const handleBackToCouponList = () => setEditingCouponId(null);
@@ -44,16 +38,15 @@ const AdminContent = () => {
 
       // Products
       case "products-list":
-        return editingProductId ? (
-          <ProductsEdit
-            productCode={editingProductId}
-            onBack={handleBackToProductList}
-          />
-        ) : (
-          <ProductsList onEdit={handleEditProduct} onAdd={() => {}} />
-        );
+        return <ProductManager view="list" />;
       case "products-add":
-        return <ProductsAdd />;
+        return <ProductManager view="create" />;
+
+      // Categories
+      case "categories-list":
+        return <CategoryManager view="list" />;
+      case "categories-create":
+        return <CategoryManager view="create" />;
 
       // Orders
       case "orders-all":

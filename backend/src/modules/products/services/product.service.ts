@@ -1,257 +1,318 @@
+/* eslint-disable */
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { Product } from '../schemas/product.schema';
+import { Category } from '../categories/schemas/category.schema';
 import { CreateProductDto } from '../dtos/create-product.dto';
 import { UpdateProductDto } from '../dtos/update-product.dto';
-import { Product, ProductDocument } from '../schemas/product.schema';
-import {
-  validateCategory,
-  validateCover,
-  validateDescription,
-  validateGallery,
-  validateName,
-  validateProductDto,
-} from '../utils/product-validator.util';
-import { generateProductCode, prepareProductMeta, validateVariants } from '../utils/product.util';
+import { FilterProductDto, SortOrder } from '../dtos/filter-product.dto';
+import { generateSlugFromName } from '../utils/string.util';
 
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+@Injectable()
 export class ProductService {
   constructor(
-    @InjectModel(Product.name)
-    private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
   ) {}
 
-  async create(dto: CreateProductDto) {
-    // --- [Validate dữ liệu đầu vào] ---
+  // ===== AUTO GENERATION =====
 
-    const validation = validateProductDto(dto);
-    if (!validation.valid) return validation;
+  async generateProductCode(categoryCode: string): Promise<string> {
+    const prefix = categoryCode.substring(0, 2).toUpperCase();
 
-    if (!dto.variants?.length) {
-      return {
-        message: 'Cần ít nhất 1 biến thể',
-        data: null,
-        errorCode: 'VARIANT_REQUIRED',
-      };
+    const lastProduct = await this.productModel
+      .findOne({ productCode: new RegExp(`^${prefix}`) })
+      .sort({ productCode: -1 })
+      .exec();
+
+    if (!lastProduct) {
+      return `${prefix}001`;
     }
 
-    // --- [Validate variants] ---
-    const variantValidation = validateVariants(dto.variants);
-    if (!variantValidation.valid) {
-      return {
-        message: variantValidation.message,
-        data: null,
-        errorCode: variantValidation.errorCode,
-      };
+    const lastNumber = parseInt(lastProduct.productCode.substring(2));
+    const newNumber = (lastNumber + 1).toString().padStart(3, '0');
+
+    return `${prefix}${newNumber}`;
+  }
+
+  generateSlug(name: string, productCode: string): string {
+    const nameSlug = generateSlugFromName(name);
+    return `${nameSlug}-${productCode.toLowerCase()}`;
+  }
+
+  generateSearchKey(dto: CreateProductDto | UpdateProductDto): string {
+    const parts = [
+      dto.name,
+      dto.brand,
+      ...(dto.specs ? dto.specs.map(s => `${s.label} ${s.value}`) : []),
+    ].filter(Boolean);
+
+    return generateSlugFromName(parts.join(' '));
+  }
+
+  // ===== CRUD =====
+
+  // Helper: Find full path to category [Root, Child, ..., Leaf]
+  private findCategoryPath(categories: Category[], targetCode: string): Category[] | null {
+    for (const category of categories) {
+      if (category.code === targetCode) {
+        return [category];
+      }
+      if (category.children && category.children.length > 0) {
+        const path = this.findCategoryPath(category.children, targetCode);
+        if (path) {
+          return [category, ...path];
+        }
+      }
+    }
+    return null;
+  }
+
+  async create(dto: CreateProductDto): Promise<Product> {
+    // Fetch all root categories (lean) to search recursively
+    // Note: We need a better way if data grows, but for menu this is fine
+    const allCategories = await this.categoryModel.find().lean().exec();
+
+    // Find path to the selected category
+    const categoryPath = this.findCategoryPath(allCategories, dto.categoryCode);
+
+    if (!categoryPath || categoryPath.length === 0) {
+      throw new NotFoundException(`Category with code "${dto.categoryCode}" not found`);
     }
 
-    // --- [Sinh mã sản phẩm duy nhất] ---
-    const productCode = await generateProductCode(this.productModel);
+    // The selected category is the last one in the path
+    const category = categoryPath[categoryPath.length - 1];
 
-    const meta = prepareProductMeta(dto);
-    const priceRange = meta.priceRange;
-    const tokens = meta.tokens;
+    // Auto-generate fields
+    const productCode = await this.generateProductCode(dto.categoryCode);
+    const slug = this.generateSlug(dto.name, productCode);
 
-    // --- [Khởi tạo và lưu sản phẩm] ---
+    // Ensure filters is populated (default to empty object if undefined)
+    const filters = dto.filters || {};
+
+    // Use filters for searchKey generation if needed, or just standard fields
+    // Updated generateSearchKey might already handle this if dto includes it.
+    // For now, keeping existing generateSearchKey call.
+    const searchKey = this.generateSearchKey(dto);
+
+    // Check slug uniqueness
+    const existingSlug = await this.productModel.findOne({ slug }).exec();
+    if (existingSlug) {
+      throw new ConflictException(`Product slug "${slug}" already exists`);
+    }
+
+    // --- HIERARCHY LOGIC ---
+    // 1. categorySlug is ALWAYS the Root Category (Level 1)
+    const rootCategory = categoryPath[0];
+    const categorySlug = rootCategory.slug;
+    const categoryPriceRanges = rootCategory.priceRanges || [];
+
+    // 2. subcategory info comes from Level 2 (if exists)
+    // If user selected L1, subcategory is empty
+    // If user selected L2 or L3, subcategory is the L2 node
+    let subcategory = '';
+    let subcategorySlug = '';
+
+    if (categoryPath.length >= 2) {
+      const subCat = categoryPath[1]; // Level 2
+      subcategory = subCat.name;
+      subcategorySlug = subCat.slug;
+    }
+
+    // Create product
     const product = new this.productModel({
       ...dto,
+      filters, // Explicitly include filters
       productCode,
-      priceRange,
-      tokens,
+      slug,
+      searchKey,
+      categorySlug,
+      subcategory,
+      subcategorySlug,
+      categoryPriceRanges,
     });
 
-    try {
-      const saved = await product.save();
-      return {
-        message: 'Tạo sản phẩm thành công',
-        data: saved,
-        errorCode: null,
-      };
-    } catch {
-      return {
-        message: 'Lỗi khi lưu sản phẩm',
-        data: null,
-        errorCode: 'PRODUCT_SAVE_ERROR',
-      };
-    }
+    return product.save();
   }
 
-  async update(productCode: string, dto: UpdateProductDto) {
-    // --- [Validate dữ liệu đầu vào nếu có] ---
-    if (dto.name) {
-      const validation = validateName(dto.name);
-      if (!validation.valid) return validation;
+  async findAll(filter: FilterProductDto): Promise<PaginatedResult<Product>> {
+    const query: any = {};
+
+    // Category filter
+    if (filter.categoryCode) {
+      query.categoryCode = filter.categoryCode;
     }
 
-    if (dto.category != null) {
-      const validation = validateCategory(dto.category);
-      if (!validation.valid) return validation;
+    // Text search
+    if (filter.search) {
+      query.$text = { $search: filter.search };
     }
 
-    if (dto.description) {
-      const validation = validateDescription(dto.description);
-      if (!validation.valid) return validation;
-    }
-
-    if (dto.cover) {
-      const validation = validateCover(dto.cover);
-      if (!validation.valid) return validation;
-    }
-
-    if (dto.gallery) {
-      const validation = validateGallery(dto.gallery);
-      if (!validation.valid) return validation;
-    }
-
-    let priceRange: Product['priceRange'] | undefined = undefined;
-    let tokens: Product['tokens'] | undefined = undefined;
-
-    if (dto.variants?.length) {
-      // --- [Validate variants] ---
-      const variantValidation = validateVariants(dto.variants);
-      if (!variantValidation.valid) {
-        return {
-          message: variantValidation.message,
-          data: null,
-          errorCode: variantValidation.errorCode,
-        };
+    // Price range
+    if (filter.minPrice !== undefined || filter.maxPrice !== undefined) {
+      query.price = {};
+      if (filter.minPrice !== undefined) {
+        query.price.$gte = filter.minPrice;
       }
-
-      const meta = prepareProductMeta(dto);
-      priceRange = meta.priceRange;
-      tokens = meta.tokens;
+      if (filter.maxPrice !== undefined) {
+        query.price.$lte = filter.maxPrice;
+      }
     }
 
-    // --- [Cập nhật sản phẩm] ---
-    const updateData: Partial<Product> = {
-      ...dto,
-    };
-
-    if (priceRange?.vi && priceRange?.ja) {
-      updateData.priceRange = priceRange;
+    // Brand filter
+    if (filter.brand) {
+      query.brand = filter.brand;
     }
 
-    if (tokens?.vi?.length && tokens?.ja?.length) {
-      updateData.tokens = tokens;
+    // Featured filter
+    if (filter.isFeatured) {
+      query.isFeatured = true;
     }
 
-    const updated = await this.productModel
-      .findOneAndUpdate({ productCode }, updateData, {
-        new: true,
-      })
-      .lean();
-
-    if (!updated) {
-      return {
-        message: 'Không tìm thấy sản phẩm',
-        data: null,
-        errorCode: 'PRODUCT_NOT_FOUND',
-      };
+    // Build PC filter
+    // If filter.isBuildPc is defined (true/false), filter by it.
+    // If undefined (e.g. Admin default), DO NOT filter property (show ALL).
+    if (filter.isBuildPc !== undefined) {
+      if (filter.isBuildPc === true) {
+        query.isBuildPc = true;
+      } else {
+        query.isBuildPc = { $ne: true };
+      }
     }
 
-    return {
-      message: 'Cập nhật sản phẩm thành công',
-      data: updated,
-      errorCode: null,
-    };
-  }
+    // Count total
+    const total = await this.productModel.countDocuments(query).exec();
 
-  async findAllPaginated(page = 1, limit = 50) {
-    const skip = (page - 1) * limit;
+    // Execute query with pagination
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const sortField = filter.sortBy || 'createdAt';
+    const sortDirection = filter.sortOrder === SortOrder.ASC ? 1 : -1;
+
     const products = await this.productModel
-      .find({}, { _id: 0, productCode: 1, cover: 1, name: 1, priceRange: 1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await this.productModel.countDocuments();
-
-    return {
-      message: 'Lấy danh sách sản phẩm thành công',
-      data: {
-        data: products,
-        pagination: {
-          currentPage: Number(page),
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          limit: Number(limit),
-        },
-      },
-      errorCode: null,
-    };
-  }
-
-  async findByCategory(category: number, page = 1, limit = 50) {
-    return this.productModel
-      .find({ category }, { _id: 0, productCode: 1, cover: 1, name: 1, priceRange: 1 })
+      .find(query)
+      .sort({ [sortField]: sortDirection })
       .skip((page - 1) * limit)
       .limit(limit)
-      .lean();
+      .exec();
+
+    return {
+      data: products,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findByCode(productCode: string) {
-    const product = await this.productModel.findOne({ productCode }, { _id: 0, __v: 0 }).lean();
+  async findByCode(productCode: string): Promise<Product> {
+    const product = await this.productModel.findOne({ productCode }).exec();
 
     if (!product) {
-      return {
-        message: 'Không tìm thấy sản phẩm',
-        data: null,
-        errorCode: 'PRODUCT_NOT_FOUND',
-      };
+      throw new NotFoundException(`Product with code "${productCode}" not found`);
     }
 
-    return {
-      message: 'Lấy sản phẩm thành công',
-      data: product,
-      errorCode: null,
-    };
+    return product;
   }
 
-  async search(keyword: string) {
-    if (!keyword?.trim()) {
-      return {
-        message: 'Từ khóa tìm kiếm không hợp lệ',
-        data: [],
-        errorCode: 'INVALID_KEYWORD',
-      };
+  async findBySlug(slug: string): Promise<Product> {
+    const product = await this.productModel.findOne({ slug }).exec();
+
+    if (!product) {
+      throw new NotFoundException(`Product with slug "${slug}" not found`);
     }
 
-    const normalized = keyword
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-    const queryRegex = new RegExp(normalized, 'i');
+    // Increment view count
+    await this.incrementViewCount(product.productCode);
 
-    const products = await this.productModel
-      .find(
-        {
-          $or: [{ 'tokens.vi': { $in: [queryRegex] } }, { 'tokens.ja': { $in: [queryRegex] } }],
-        },
-        { _id: 0, productCode: 1, cover: 1, name: 1, priceRange: 1 },
-      )
-      .limit(100)
-      .lean();
-
-    return {
-      message: 'Kết quả tìm kiếm',
-      data: products,
-      errorCode: null,
-    };
+    return product;
   }
 
-  async delete(productCode: string) {
-    const deleted = await this.productModel.findOneAndDelete({ productCode }).lean();
+  async update(productCode: string, dto: UpdateProductDto): Promise<Product> {
+    const product = await this.findByCode(productCode);
 
-    if (!deleted) {
-      return {
-        message: 'Không tìm thấy sản phẩm để xoá',
-        data: null,
-        errorCode: 'PRODUCT_NOT_FOUND',
-      };
+    // If name changed, regenerate slug
+    if (dto.name && dto.name !== product.name) {
+      const newSlug = this.generateSlug(dto.name, productCode);
+      const existingSlug = await this.productModel
+        .findOne({ slug: newSlug, productCode: { $ne: productCode } })
+        .exec();
+
+      if (existingSlug) {
+        throw new ConflictException(`Slug "${newSlug}" already exists`);
+      }
+
+      (dto as any)['slug'] = newSlug;
     }
 
-    return {
-      message: 'Xoá sản phẩm thành công',
-      data: deleted,
-      errorCode: null,
-    };
+    // Regenerate searchKey if relevant fields changed
+    if (dto.name || dto.brand || dto.specs) {
+      (dto as any)['searchKey'] = this.generateSearchKey({
+        ...product.toObject(),
+        ...dto,
+      });
+    }
+
+    Object.assign(product, dto);
+    return product.save();
+  }
+
+  async delete(productCode: string): Promise<void> {
+    const result = await this.productModel.deleteOne({ productCode }).exec();
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundException(`Product with code "${productCode}" not found`);
+    }
+  }
+
+  // ===== ADVANCED =====
+
+  async findRelated(productCode: string, limit: number = 4): Promise<Product[]> {
+    const product = await this.findByCode(productCode);
+
+    return this.productModel
+      .find({
+        productCode: { $ne: productCode },
+        categoryCode: product.categoryCode,
+        isActive: true,
+      })
+      .limit(limit)
+      .exec();
+  }
+
+  async incrementViewCount(productCode: string): Promise<void> {
+    await this.productModel.updateOne({ productCode }, { $inc: { viewCount: 1 } }).exec();
+  }
+
+  async toggleActive(productCode: string): Promise<Product> {
+    const product = await this.findByCode(productCode);
+    product.isActive = !product.isActive;
+    return product.save();
+  }
+
+  async toggleFeatured(productCode: string): Promise<Product> {
+    const product = await this.findByCode(productCode);
+    product.isFeatured = !product.isFeatured;
+    return product.save();
+  }
+
+  async toggleBuildPc(productCode: string): Promise<Product> {
+    const product = await this.findByCode(productCode);
+    product.isBuildPc = !product.isBuildPc;
+    return product.save();
   }
 }

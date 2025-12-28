@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -6,15 +5,14 @@ import {
   Package,
   ShoppingCart,
   FileText,
-
   Globe,
-
   Home,
   Ticket,
   Users,
   ChevronRight,
   ChevronDown,
   BookOpen,
+  FolderTree,
   type LucideIcon,
 } from "lucide-react";
 import { useAdminPage } from "../contexts/AdminPageContext";
@@ -59,6 +57,7 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
   const getDefaultPageForCollapsedMenu = (itemId: string): string | null => {
     const defaultPages: Record<string, string> = {
       products: "products-list",
+      categories: "categories-list",
       orders: "orders-all",
       customers: "customers-list",
       users: "users-customers",
@@ -115,7 +114,16 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
           submenu: [
             { label: "Danh sách sản phẩm", page: "products-list" },
             { label: "Thêm sản phẩm", page: "products-add" },
-  
+          ],
+        },
+        {
+          id: "categories",
+          icon: FolderTree,
+          label: "Danh mục",
+          hasSubmenu: true,
+          submenu: [
+            { label: "Danh sách danh mục", page: "categories-list" },
+            { label: "Tạo danh mục", page: "categories-create" },
           ],
         },
       ],
@@ -128,10 +136,7 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
           icon: ShoppingCart,
           label: "Đơn hàng",
           hasSubmenu: true,
-          submenu: [
-            { label: "Tất cả đơn hàng", page: "orders-all" },
-
-          ],
+          submenu: [{ label: "Tất cả đơn hàng", page: "orders-all" }],
         },
       ],
     },
@@ -156,13 +161,10 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
           label: "Nội dung",
           hasSubmenu: true,
           submenu: [
-
             { label: "Danh sách bài viết", page: "content-posts" },
             { label: "Đăng bài viết", page: "content-create-post" },
-
           ],
         },
-
       ],
     },
     {
@@ -191,7 +193,6 @@ const MenuItems = ({ isSidebarOpen, idPrefix = "" }: MenuItemsProps) => {
         },
       ],
     },
-   
   ];
 
   const handleItemClick = (item: MenuItem) => {

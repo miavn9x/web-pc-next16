@@ -26,8 +26,8 @@ export const PRODUCT_DETAIL_DATA = {
       vga: "Asus ROG Strix RTX 4090 24GB",
       storage: "Samsung 990 Pro 2TB NVMe Gen4",
       psu: "Thor 1200W 80 Plus Platinum",
-      case: "Lian Li O11 Dynamic EVO",
-      cooling: "NZXT Kraken Z73 RGB",
+      // case: "Lian Li O11 Dynamic EVO",
+      // cooling: "NZXT Kraken Z73 RGB",
     },
     filters: {
       cpuFamily: "Intel Core i9",

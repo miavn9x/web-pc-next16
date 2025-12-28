@@ -157,9 +157,15 @@ export class ProductService {
       query.categoryCode = filter.categoryCode;
     }
 
-    // Text search
+    // Text search (Regex for partial match)
     if (filter.search) {
-      query.$text = { $search: filter.search };
+      const searchRegex = new RegExp(filter.search, 'i'); // Case-insensitive
+      query.$or = [
+        { name: { $regex: searchRegex } },
+        { productCode: { $regex: searchRegex } },
+        { brand: { $regex: searchRegex } },
+        { searchKey: { $regex: searchRegex } },
+      ];
     }
 
     // Price range

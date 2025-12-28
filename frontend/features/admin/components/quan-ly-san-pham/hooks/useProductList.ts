@@ -44,7 +44,7 @@ export function useProductList() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, categoryCode, isFeatured]);
+  }, [page, limit, search, categoryCode, isFeatured, isBuildPc]);
 
   useEffect(() => {
     fetchProducts();
@@ -104,6 +104,28 @@ export function useProductList() {
     [fetchProducts]
   );
 
+  // Categories
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/products/categories/tree`,
+          {
+            credentials: "include",
+          }
+        );
+        const result = await response.json();
+        setCategories(result.data || []);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   return {
     products,
     loading,
@@ -127,5 +149,6 @@ export function useProductList() {
     handleToggleFeatured,
     handleToggleBuildPc,
     refreshProducts: fetchProducts,
+    categories,
   };
 }

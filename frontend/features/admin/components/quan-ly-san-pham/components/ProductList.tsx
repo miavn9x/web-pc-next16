@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { useProductList } from "../hooks/useProductList";
 import type { Product } from "../types";
+import CategorySelect from "./CategorySelect";
 
 interface ProductListProps {
   onEdit: (productCode: string) => void;
@@ -21,8 +22,6 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
     setCategoryCode,
     isFeatured,
     setIsFeatured,
-    isBuildPc,
-    setIsBuildPc,
     page,
     setPage,
     limit,
@@ -34,6 +33,7 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
     handleToggleFeatured,
     handleToggleBuildPc,
     refreshProducts,
+    categories,
   } = useProductList();
 
   const formatPrice = (price: number) => {
@@ -72,7 +72,7 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -87,19 +87,13 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
             />
           </div>
 
-          {/* Category Filter - TODO: Fetch categories */}
+          {/* Category Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Danh mục
-            </label>
-            <select
+            <CategorySelect
+              categories={categories}
               value={categoryCode}
-              onChange={(e) => setCategoryCode(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Tất cả danh mục</option>
-              {/* TODO: Map categories here */}
-            </select>
+              onChange={setCategoryCode}
+            />
           </div>
 
           {/* Featured Filter */}
@@ -118,25 +112,6 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
               <option value="">Tất cả</option>
               <option value="true">Nổi bật</option>
               <option value="false">Không nổi bật</option>
-            </select>
-          </div>
-
-          {/* Type Filter (Build PC) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Loại sản phẩm
-            </label>
-            <select
-              value={isBuildPc === undefined ? "" : isBuildPc.toString()}
-              onChange={(e) => {
-                const value = e.target.value;
-                setIsBuildPc(value === "" ? undefined : value === "true");
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Tất cả sản phẩm</option>
-              <option value="false">Sản phẩm thường</option>
-              <option value="true">Linh kiện Build PC</option>
             </select>
           </div>
         </div>
@@ -304,16 +279,46 @@ const ProductList = ({ onEdit, onRefresh }: ProductListProps) => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => onEdit(product.productCode)}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Sửa sản phẩm"
                         >
-                          Sửa
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00 2 2h11a2 2 0 00 2-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
                         </button>
                         <button
                           onClick={() => handleDelete(product.productCode)}
                           disabled={deleting === product.productCode}
-                          className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Xóa sản phẩm"
                         >
-                          {deleting === product.productCode ? "..." : "Xóa"}
+                          {deleting === product.productCode ? (
+                            <span className="text-xs">...</span>
+                          ) : (
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </td>

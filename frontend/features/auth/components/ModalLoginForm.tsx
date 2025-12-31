@@ -29,18 +29,39 @@ export const ModalLoginForm = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<HTMLInputElement>(null);
 
-  // Ref để tránh fetch 2 lần trong React Strict Mode
-  const hasFetched = useRef(false);
+  // Polling interval ref
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchCaptcha = async () => {
-    if (isLoading || isFetchingCaptcha) return; // Prevent spam
+  // Fetch captcha with email (check lock first)
+  const fetchCaptchaWithEmail = async (emailValue: string) => {
+    if (isFetchingCaptcha) return;
     setIsFetchingCaptcha(true);
     try {
-      const data = await getCaptcha();
-      setCaptchaId(data.captchaId);
-      setCaptchaImage(data.captchaImage);
+      const data = await getCaptcha(emailValue);
+
+      // Check if locked
+      if (data.lockInfo?.locked) {
+        // Locked → Set lock state, clear captcha
+        setLocalLockUntil(data.lockInfo.lockUntil || null);
+        setLockReason(data.lockInfo.lockReason || null);
+        setLockCount(data.lockInfo.lockCount || 0);
+        setCaptchaImage("");
+        setCaptchaId("");
+        setCaptchaInput("");
+
+        // Start polling to check when lock expires
+        startPolling(emailValue);
+      } else {
+        // Not locked → Show captcha
+        setCaptchaId(data.captchaId || "");
+        setCaptchaImage(data.captchaImage || "");
+        setLocalLockUntil(null);
+        setLockReason(null);
+
+        // Stop polling if it was running
+        stopPolling();
+      }
     } catch (error: any) {
-      // console.error("Failed to fetch captcha", error);
       if (error?.response?.status === 429) {
         toast.error("Thao tác quá nhanh. Vui lòng đợi!");
       } else {
@@ -51,12 +72,49 @@ export const ModalLoginForm = () => {
     }
   };
 
-  useEffect(() => {
-    if (!hasFetched.current) {
-      fetchCaptcha();
-      hasFetched.current = true;
+  // Start polling to auto-refresh captcha when lock expires
+  const startPolling = (emailValue: string) => {
+    // Clear existing interval
+    stopPolling();
+
+    // Poll every 10 seconds
+    pollingIntervalRef.current = setInterval(() => {
+      fetchCaptchaWithEmail(emailValue);
+    }, 10000);
+  };
+
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => stopPolling();
   }, []);
+
+  // Debounced email check
+  useEffect(() => {
+    // Only fetch when email is valid format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      // Clear captcha if email is invalid
+      setCaptchaImage("");
+      setCaptchaId("");
+      setCaptchaInput("");
+      stopPolling();
+      return;
+    }
+
+    // Debounce 500ms
+    const timer = setTimeout(() => {
+      fetchCaptchaWithEmail(email);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const handleCaptchaInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCaptchaInput(e.target.value);
@@ -64,9 +122,9 @@ export const ModalLoginForm = () => {
   };
 
   const handleRefreshCaptcha = () => {
-    if (isFetchingCaptcha) return;
+    if (isFetchingCaptcha || !email) return;
     setCaptchaInput("");
-    fetchCaptcha();
+    fetchCaptchaWithEmail(email);
   };
 
   const validateEmail = (value: string) => {
@@ -102,35 +160,26 @@ export const ModalLoginForm = () => {
   };
 
   const [localLockUntil, setLocalLockUntil] = useState<number | null>(null);
-  const [lockReason, setLockReason] = useState<string | null>(null); // 'CAPTCHA' or 'PASSWORD'
-  const [lockCount, setLockCount] = useState<number>(0); // Số lần bị lock
+  const [lockReason, setLockReason] = useState<string | null>(null);
+  const [lockCount, setLockCount] = useState<number>(0);
 
-  // Load from LocalStorage on mount (Chỉ để giữ trải nghiệm người dùng, không phải bảo mật chính)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedLock = localStorage.getItem("auth_lock_until");
-      if (storedLock) setLocalLockUntil(Number(storedLock));
-    }
-  }, []);
-
-  // Check local lock on mount/render
+  // Check if locked
   const isLocked = localLockUntil !== null && Date.now() < localLockUntil;
 
-  // Effect to clean up lock if expired
+  // Countdown timer
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     if (localLockUntil) {
-      // Update immediately to avoid 1s delay
       setNow(Date.now());
 
       const interval = setInterval(() => {
         const currentTime = Date.now();
-        setNow(currentTime); // Force re-render
+        setNow(currentTime);
 
         if (currentTime >= localLockUntil) {
           setLocalLockUntil(null);
-          localStorage.removeItem("auth_lock_until");
+          // Auto-refresh captcha when lock expires (polling will handle this)
         }
       }, 1000);
       return () => clearInterval(interval);
@@ -212,9 +261,9 @@ export const ModalLoginForm = () => {
         };
       }
 
-      // Thành công -> Xóa lock nếu có (logic local)
+      // Thành công -> Xóa lock state
       setLocalLockUntil(null);
-      localStorage.removeItem("auth_lock_until");
+      stopPolling();
 
       toast.success("Đăng nhập thành công!");
 
@@ -231,10 +280,14 @@ export const ModalLoginForm = () => {
 
       // Handle Backend Lock Error
       if (error?.response?.data?.errorCode === "AUTH_LOCKED") {
-        const lockUntil = error.response.data.lockUntil; // timestamp returned from BE
-        if (lockUntil) {
-          setLocalLockUntil(lockUntil);
-          localStorage.setItem("auth_lock_until", String(lockUntil));
+        const lockData =
+          error.response.data.data || error.response.data.lockInfo;
+        if (lockData?.lockUntil) {
+          setLocalLockUntil(lockData.lockUntil);
+          setLockReason(lockData.lockReason);
+          setCaptchaImage("");
+          setCaptchaId("");
+          startPolling(email);
           toast.error(error.response.data.message);
           return;
         }

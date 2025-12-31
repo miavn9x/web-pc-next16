@@ -44,6 +44,17 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: CacheManager, // Sử dụng Interface đã định nghĩa
   ) {}
 
+  // --- Kiểm Tra Lock Trước Khi Trả Captcha ---
+  /**
+   * Kiểm tra xem email + IP có đang bị lock không (cho captcha)
+   * @param email - Email người dùng
+   * @param ip - IP address
+   * @returns Lock status và thông tin lock nếu có
+   */
+  async checkCaptchaLock(email: string, ip: string) {
+    return this.authThrottler.checkLock(email, ip, LockReason.CAPTCHA);
+  }
+
   // --- Tạo Captcha ---
   async generateCaptcha() {
     const { data, text } = svgCaptcha.create({

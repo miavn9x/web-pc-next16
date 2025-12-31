@@ -166,15 +166,39 @@ export class AuthController {
     };
   }
 
-  // --- [GET] /auth/captcha - Lấy mã Captcha mới ---
-  @Post('captcha') // Dùng Post để tránh cache browser hoặc GET cũng được
+  // --- [POST] /auth/captcha - Lấy mã Captcha mới (với kiểm tra lock) ---
+  @Post('captcha')
   @HttpCode(HttpStatus.OK)
-  async getCaptcha() {
+  async getCaptcha(@Body('email') email?: string, @Ip() ip?: string) {
+    // 1. Nếu có email → Kiểm tra lock trước khi trả captcha
+    if (email && ip) {
+      const lockCheck = await this.authService.checkCaptchaLock(email, ip);
+
+      if (lockCheck.locked) {
+        // Đang bị lock → Trả lock info, KHÔNG trả captcha
+        return {
+          message: lockCheck.message || 'Tài khoản tạm thời bị khóa.',
+          data: null,
+          errorCode: 'AUTH_LOCKED',
+          lockInfo: {
+            locked: true,
+            lockUntil: lockCheck.lockUntil,
+            lockReason: lockCheck.lockReason,
+            lockCount: lockCheck.lockCount,
+          },
+        };
+      }
+    }
+
+    // 2. Không bị lock hoặc không có email → Generate captcha bình thường
     const result = await this.authService.generateCaptcha();
     return {
       message: 'Lấy captcha thành công',
       data: result,
       errorCode: null,
+      lockInfo: {
+        locked: false,
+      },
     };
   }
 }

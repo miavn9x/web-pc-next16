@@ -11,10 +11,23 @@ export const loginUser = async (
   return res.data;
 };
 
-export const getCaptcha = async (): Promise<{
-  captchaId: string;
-  captchaImage: string;
+export const getCaptcha = async (
+  email?: string
+): Promise<{
+  captchaId?: string;
+  captchaImage?: string;
+  lockInfo?: {
+    locked: boolean;
+    lockUntil?: number;
+    lockReason?: string;
+    lockCount?: number;
+  };
 }> => {
-  const res = await axiosInstance.post("/auth/captcha");
-  return res.data.data;
+  const res = await axiosInstance.post("/auth/captcha", { email });
+  // Backend trả về data hoặc lockInfo
+  return {
+    captchaId: res.data.data?.captchaId,
+    captchaImage: res.data.data?.captchaImage,
+    lockInfo: res.data.lockInfo,
+  };
 };

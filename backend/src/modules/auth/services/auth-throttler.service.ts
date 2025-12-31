@@ -26,15 +26,22 @@ export class AuthThrottlerService {
 
   /**
    * Tính toán thời gian lock dựa trên số lần bị lock
-   * Progressive: 1min → 5min → 15min → 30min → 1h
+   * Progressive: 1min → 5min → 15min → 30min → 1h → 3h → 6h → 12h → 24h → 48h → 7 ngày → 30 ngày
    */
   private calculateLockDuration(lockCount: number): number {
     const durations = [
-      1 * 60 * 1000, // 1 phút
-      5 * 60 * 1000, // 5 phút
-      15 * 60 * 1000, // 15 phút
-      30 * 60 * 1000, // 30 phút
-      60 * 60 * 1000, // 1 giờ
+      1 * 60 * 1000, // Lần 1: 1 phút
+      5 * 60 * 1000, // Lần 2: 5 phút
+      15 * 60 * 1000, // Lần 3: 15 phút
+      30 * 60 * 1000, // Lần 4: 30 phút
+      60 * 60 * 1000, // Lần 5: 1 giờ
+      3 * 60 * 60 * 1000, // Lần 6: 3 giờ
+      6 * 60 * 60 * 1000, // Lần 7: 6 giờ
+      12 * 60 * 60 * 1000, // Lần 8: 12 giờ
+      24 * 60 * 60 * 1000, // Lần 9: 24 giờ (1 ngày)
+      48 * 60 * 60 * 1000, // Lần 10: 48 giờ (2 ngày)
+      7 * 24 * 60 * 60 * 1000, // Lần 11: 7 ngày (1 tuần)
+      30 * 24 * 60 * 60 * 1000, // Lần 12+: 30 ngày (1 tháng) - Maximum
     ];
     const index = Math.min(lockCount, durations.length - 1);
     return durations[index];

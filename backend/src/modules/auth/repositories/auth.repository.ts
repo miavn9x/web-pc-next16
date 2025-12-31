@@ -55,6 +55,7 @@ export class AuthRepository {
     const hashed = await argon2.hash(password, { type: argon2.argon2id });
 
     // 2. Tạo người dùng mới
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const user = (await this.userModel.create({
       firstName,
       lastName,

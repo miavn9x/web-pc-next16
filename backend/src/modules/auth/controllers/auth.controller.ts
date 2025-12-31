@@ -44,7 +44,7 @@ export class AuthController {
   ) {}
 
   // --- [POST] /auth/register - Đăng Ký Người Dùng ---
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 lần/phút cho đăng ký
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // Giới hạn 10 lần/phút cho đăng ký (cho phép retry)
   @HttpCode(HttpStatus.OK)
   @Post('register')
   async register(
@@ -82,7 +82,7 @@ export class AuthController {
   }
 
   // --- [POST] /auth/login - Đăng Nhập Người Dùng ---
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // Giới hạn 10 lần/phút cho đăng nhập
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) // Giới hạn 15 lần/phút (cho phép retry nhiều lần)
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(

@@ -1,124 +1,229 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { Cache } from 'cache-manager';
+import { Model } from 'mongoose';
+import { AccountLock, AccountLockDocument, LockReason } from '../schemas/account-lock.schema';
+
+// --- Interface Cache Manager ---
+interface CacheManager {
+  get<T>(key: string): Promise<T | undefined | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  del(key: string): Promise<void>;
+}
 
 @Injectable()
 export class AuthThrottlerService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: CacheManager,
+    @InjectModel(AccountLock.name)
+    private readonly accountLockModel: Model<AccountLockDocument>,
+  ) {}
 
   // --- Constants ---
-  private readonly MAX_LOGIN_ATTEMPTS = 5; // Cho phép sai 5 lần
-  private readonly LOCK_TIME_MS = 60 * 1000; // Khóa 1 phút
+  private readonly MAX_ATTEMPTS = 5; // Cho phép sai 5 lần trước khi lock
   private readonly CAPTCHA_TTL = 300; // 5 phút
 
-  // Tạo key cache cho việc đếm số lần sai theo IP
-  private getAttemptKey(ip: string, email: string): string {
-    const safeEmail = email ? email.trim().toLowerCase() : 'unknown';
-    return `login_attempts:${ip}:${safeEmail}`;
-  }
-
-  // Tạo key cache cho việc khóa theo IP
-  private getLockKey(ip: string, email: string): string {
-    const safeEmail = email ? email.trim().toLowerCase() : 'unknown';
-    return `login_lock:${ip}:${safeEmail}`;
+  /**
+   * Tính toán thời gian lock dựa trên số lần bị lock
+   * Progressive: 1min → 5min → 15min → 30min → 1h
+   */
+  private calculateLockDuration(lockCount: number): number {
+    const durations = [
+      1 * 60 * 1000, // 1 phút
+      5 * 60 * 1000, // 5 phút
+      15 * 60 * 1000, // 15 phút
+      30 * 60 * 1000, // 30 phút
+      60 * 60 * 1000, // 1 giờ
+    ];
+    const index = Math.min(lockCount, durations.length - 1);
+    return durations[index];
   }
 
   /**
-   * Kiểm tra xem user (từ IP này) có bị khóa không
+   * Tạo key cache cho attempt count
    */
-  async checkLimit(
-    ip: string,
+  private getAttemptKey(ip: string, email: string, reason: LockReason): string {
+    const safeEmail = email ? email.trim().toLowerCase() : 'unknown';
+    return `attempt:${reason}:${ip}:${safeEmail}`;
+  }
+
+  /**
+   * Kiểm tra xem user có đang bị lock không (từ database)
+   * @returns Lock info nếu đang bị lock, null nếu không
+   */
+  async checkLock(
     email: string,
-  ): Promise<{ locked: boolean; message?: string; errorCode?: string; lockUntil?: number }> {
-    const lockKey = this.getLockKey(ip, email);
-    const lockExpiresAt = await this.cacheManager.get<number>(lockKey);
+    ip: string,
+    reason: LockReason,
+  ): Promise<{
+    locked: boolean;
+    message?: string;
+    errorCode?: string;
+    lockUntil?: number;
+    lockReason?: LockReason;
+    lockCount?: number;
+  }> {
+    const safeEmail = email.trim().toLowerCase();
 
-    console.log(
-      `[THROTTLER] Check LockKey: ${lockKey} -> ExpiresAt: ${lockExpiresAt}, Now: ${Date.now()}`,
-    );
+    // Tìm active lock từ database
+    const activeLock = await this.accountLockModel.findOne({
+      email: safeEmail,
+      ipAddress: ip,
+      lockReason: reason,
+      isUnlocked: false,
+      lockUntil: { $gt: new Date() },
+    });
 
-    if (lockExpiresAt) {
+    if (activeLock) {
       const now = Date.now();
-      if (now < lockExpiresAt) {
-        const remainingSeconds = Math.ceil((lockExpiresAt - now) / 1000);
+      const lockUntilTimestamp = activeLock.lockUntil.getTime();
+
+      if (now < lockUntilTimestamp) {
+        const remainingSeconds = Math.ceil((lockUntilTimestamp - now) / 1000);
         const minutes = Math.floor(remainingSeconds / 60);
         const seconds = remainingSeconds % 60;
 
+        const reasonText = reason === LockReason.CAPTCHA ? 'mã xác nhận' : 'mật khẩu';
+
         return {
           locked: true,
-          message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
+          message: `Tài khoản tạm thời bị khóa do nhập sai ${reasonText} quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
           errorCode: 'AUTH_LOCKED',
-          lockUntil: lockExpiresAt,
+          lockUntil: lockUntilTimestamp,
+          lockReason: reason,
+          lockCount: activeLock.lockCount,
         };
+      } else {
+        // Lock đã hết hạn, tự động unlock
+        activeLock.isUnlocked = true;
+        activeLock.unlockedAt = new Date();
+        await activeLock.save();
       }
-    }
-
-    // Check attempt count
-    const attemptKey = this.getAttemptKey(ip, email);
-    const count = await this.cacheManager.get<number>(attemptKey);
-
-    console.log(
-      `[THROTTLER] Check AttemptKey: ${attemptKey} -> Count: ${count}/${this.MAX_LOGIN_ATTEMPTS}`,
-    );
-
-    if (count && count >= this.MAX_LOGIN_ATTEMPTS) {
-      console.log(`[THROTTLER] Limit Exceeded! Locking user: ${email} at IP: ${ip}`);
-      // Logic khóa tài khoản nếu vượt quá giới hạn
-      await this.lockUser(ip, email);
-
-      const updatedLockExpiresAt = await this.cacheManager.get<number>(lockKey);
-      const now = Date.now();
-      const lockUntil = updatedLockExpiresAt || now + this.LOCK_TIME_MS;
-
-      const remainingSeconds = Math.ceil((lockUntil - now) / 1000);
-      const minutes = Math.floor(remainingSeconds / 60);
-      const seconds = remainingSeconds % 60;
-
-      return {
-        locked: true,
-        message: `Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${minutes} phút ${seconds} giây.`,
-        errorCode: 'AUTH_LOCKED',
-        lockUntil: lockUntil,
-      };
     }
 
     return { locked: false };
   }
 
   /**
-   * Tăng số lần sai. Nếu vượt quá giới hạn thì khóa.
+   * Tăng attempt count cho Captcha hoặc Password
+   * Nếu vượt quá MAX_ATTEMPTS → Lock account
    */
-  async increment(ip: string, email: string) {
-    const key = this.getAttemptKey(ip, email);
+  async incrementAttempt(email: string, ip: string, reason: LockReason): Promise<void> {
+    const safeEmail = email.trim().toLowerCase();
+    const key = this.getAttemptKey(ip, safeEmail, reason);
+
+    // Lấy attempt count từ cache
     const count = (await this.cacheManager.get<number>(key)) || 0;
     const newCount = count + 1;
 
-    console.log(`[THROTTLER] Increment Key: ${key} | ${count} -> ${newCount}`);
+    console.log(
+      `[THROTTLER] Increment ${reason} - Email: ${safeEmail}, IP: ${ip}, Count: ${count} → ${newCount}`,
+    );
 
-    // Set ttl to reset the window or extend it?
-    // Usually standard rate limiting resets window on first write, or slides.
-    // Here we just refresh the TTL on every write to keep the key alive while user is spamming.
-    await this.cacheManager.set(key, newCount, this.LOCK_TIME_MS);
+    // Lưu vào cache với TTL 60 giây
+    await this.cacheManager.set(key, newCount, 60 * 1000);
+
+    // Nếu vượt quá giới hạn → Lock account
+    if (newCount >= this.MAX_ATTEMPTS) {
+      console.log(`[THROTTLER] Max attempts reached! Locking account...`);
+      await this.lockAccount(safeEmail, ip, reason);
+      // Xóa cache sau khi lock
+      await this.cacheManager.del(key);
+    }
   }
 
   /**
-   * Logic khóa user với thời gian tăng dần
+   * Lock account và lưu vào database
    */
-  private async lockUser(ip: string, email: string) {
-    const key = this.getLockKey(ip, email);
-    const lockUntil = Date.now() + this.LOCK_TIME_MS;
-    console.log(`[THROTTLER] Setting Lock Key: ${key} until ${lockUntil}`);
-    await this.cacheManager.set(key, lockUntil, this.LOCK_TIME_MS);
+  private async lockAccount(email: string, ip: string, reason: LockReason): Promise<void> {
+    // Tìm lock record hiện tại (nếu có)
+    const existingLock = await this.accountLockModel.findOne({
+      email,
+      ipAddress: ip,
+      lockReason: reason,
+    });
+
+    let lockCount = 0;
+    if (existingLock) {
+      lockCount = existingLock.lockCount + 1;
+    }
+
+    const lockDuration = this.calculateLockDuration(lockCount);
+    const lockUntil = new Date(Date.now() + lockDuration);
+
+    if (existingLock) {
+      // Update existing lock
+      existingLock.lockCount = lockCount;
+      existingLock.attemptCount = this.MAX_ATTEMPTS;
+      existingLock.lockUntil = lockUntil;
+      existingLock.isUnlocked = false;
+      existingLock.lastAttemptAt = new Date();
+      await existingLock.save();
+
+      console.log(
+        `[THROTTLER] Updated lock - Email: ${email}, Reason: ${reason}, LockCount: ${lockCount}, Until: ${lockUntil.toISOString()}`,
+      );
+    } else {
+      // Create new lock record
+      await this.accountLockModel.create({
+        email,
+        ipAddress: ip,
+        lockReason: reason,
+        lockCount,
+        attemptCount: this.MAX_ATTEMPTS,
+        lockUntil,
+        isUnlocked: false,
+        lastAttemptAt: new Date(),
+      });
+
+      console.log(
+        `[THROTTLER] Created new lock - Email: ${email}, Reason: ${reason}, LockCount: ${lockCount}, Until: ${lockUntil.toISOString()}`,
+      );
+    }
   }
 
   /**
-   * Reset khi đăng nhập thành công
+   * Reset lock khi đăng nhập thành công
+   * Xóa tất cả cache và đánh dấu database locks là unlocked
    */
-  async reset(ip: string, email: string): Promise<void> {
-    const attemptKey = this.getAttemptKey(ip, email);
-    const lockKey = this.getLockKey(ip, email);
-    console.log(`[THROTTLER] Resetting keys for ${email}`);
-    await this.cacheManager.del(attemptKey);
-    await this.cacheManager.del(lockKey);
+  async resetLock(email: string, ip: string): Promise<void> {
+    const safeEmail = email.trim().toLowerCase();
+
+    console.log(`[THROTTLER] Resetting locks for Email: ${safeEmail}, IP: ${ip}`);
+
+    // Xóa cache cho cả captcha và password
+    await this.cacheManager.del(this.getAttemptKey(ip, safeEmail, LockReason.CAPTCHA));
+    await this.cacheManager.del(this.getAttemptKey(ip, safeEmail, LockReason.PASSWORD));
+
+    // Unlock tất cả active locks trong database
+    await this.accountLockModel.updateMany(
+      {
+        email: safeEmail,
+        ipAddress: ip,
+        isUnlocked: false,
+      },
+      {
+        $set: {
+          isUnlocked: true,
+          unlockedAt: new Date(),
+          attemptCount: 0, // Reset attempt count
+        },
+      },
+    );
+
+    console.log(`[THROTTLER] Reset completed for ${safeEmail}`);
+  }
+
+  /**
+   * Lấy thông tin lock hiện tại (dùng cho debugging/admin panel)
+   */
+  async getLockInfo(email: string, ip: string): Promise<AccountLockDocument[]> {
+    return this.accountLockModel.find({
+      email: email.trim().toLowerCase(),
+      ipAddress: ip,
+      isUnlocked: false,
+      lockUntil: { $gt: new Date() },
+    });
   }
 }

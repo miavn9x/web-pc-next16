@@ -1,14 +1,15 @@
-
-export const getImageUrl = (url?: string): string => {
+export function getImageUrl(url: string | null | undefined): string {
   if (!url) return "";
   if (url.startsWith("http") || url.startsWith("https")) return url;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-  // Remove '/api' suffix to get base URL
-  const baseUrl = apiUrl.replace(/\/api$/, "");
-  
-  // Ensure URL starts with /
-  const cleanUrl = url.startsWith("/") ? url : `/${url}`;
-  
-  return `${baseUrl}${cleanUrl}`;
-};
+  // Static files (uploads) KHÔNG đi qua /api-proxy
+  // Phải truy cập trực tiếp backend tunnel
+  const imageBaseUrl =
+    process.env.NEXT_PUBLIC_IMAGE_URL ||
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api-proxy", "") ||
+    "http://localhost:4000";
+
+  // Ensure url starts with /
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${imageBaseUrl}${path}`;
+}

@@ -10,6 +10,7 @@ import { JwtModule } from '../../common/jwt/jwt.module';
 // --- Import Schema ---
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthSession, AuthSessionSchema } from './schemas/auth.schema';
+import { AccountLock, AccountLockSchema } from './schemas/account-lock.schema';
 
 // --- Import Controller ---
 import { AuthController } from 'src/modules/auth/controllers/auth.controller';
@@ -29,6 +30,7 @@ import { JwtStrategy } from '../../common/jwt/strategies/jwt.strategy';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: AuthSession.name, schema: AuthSessionSchema },
+      { name: AccountLock.name, schema: AccountLockSchema },
     ]),
     // Cấu hình JWT cho xác thực
     JwtModule,

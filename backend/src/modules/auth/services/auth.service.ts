@@ -9,6 +9,7 @@ import * as svgCaptcha from 'svg-captcha';
 import { JwtService } from '../../../common/jwt/services/jwt.service';
 import { setAuthCookies } from '../utils/set-cookie.util';
 import { AuthThrottlerService } from './auth-throttler.service';
+import { LockReason } from '../schemas/account-lock.schema';
 
 // --- Nhập Repository ---
 import { AuthRepository } from 'src/modules/auth/repositories/auth.repository';
@@ -83,17 +84,14 @@ export class AuthService {
   async register(dto: RegisterDto, ip: string, userAgent?: string) {
     const { email, password, captchaId, captchaCode } = dto;
 
-    // 0. Kiểm tra Rate Limit
+    // 0. Kiểm tra Captcha Lock từ Database
     console.log(`[DEBUG] Register Check - IP: ${ip}, Email: ${email}`);
-    const throttleCheck = await this.authThrottler.checkLimit(ip, email);
-    if (throttleCheck.locked) {
+    const captchaLockCheck = await this.authThrottler.checkLock(email, ip, LockReason.CAPTCHA);
+    if (captchaLockCheck.locked) {
       return {
-        message: throttleCheck.message || 'Tài khoản bị khóa.',
-        data: null,
-        errorCode: throttleCheck.errorCode || 'AUTH_LOCKED',
-        // Pass extra data if needed, but currently StandardResponse structure is fixed.
-        // We might need to embed lockUntil in message or extend response type?
-        // For now, let's just return the error code which frontend handles.
+        message: captchaLockCheck.message || 'Tài khoản bị khóa do sai mã xác nhận.',
+        data: { lockUntil: captchaLockCheck.lockUntil, lockReason: captchaLockCheck.lockReason },
+        errorCode: captchaLockCheck.errorCode || 'AUTH_LOCKED',
       };
     }
 
@@ -102,8 +100,8 @@ export class AuthService {
     console.log(`[DEBUG] Captcha Valid: ${isCaptchaValid}, Code: ${captchaCode}, ID: ${captchaId}`);
 
     if (!isCaptchaValid) {
-      console.log(`[DEBUG] Incrementing Rate Limit for IP: ${ip}`);
-      await this.authThrottler.increment(ip, email);
+      console.log(`[DEBUG] Incrementing Captcha Error for IP: ${ip}`);
+      await this.authThrottler.incrementAttempt(email, ip, LockReason.CAPTCHA);
       return {
         message: 'Mã xác nhận không chính xác hoặc đã hết hạn',
         data: null,
@@ -138,7 +136,14 @@ export class AuthService {
     }
 
     // Uỷ quyền repository xử lý đăng ký
-    return this.authRepo.handleRegister(dto, ip, userAgent);
+    const result = await this.authRepo.handleRegister(dto, ip, userAgent);
+
+    // Nếu đăng ký thành công → Reset locks
+    if (result.errorCode === null) {
+      await this.authThrottler.resetLock(email, ip);
+    }
+
+    return result;
   }
 
   // --- Đăng Nhập Người Dùng ---
@@ -148,22 +153,21 @@ export class AuthService {
   async login(dto: LoginDto, ip: string, userAgent?: string) {
     const { email, password, captchaId, captchaCode } = dto;
 
-    // 0. Kiểm tra Rate Limit (Khóa nếu sai quá nhiều theo IP + Email)
-    const throttleCheck = await this.authThrottler.checkLimit(ip, email);
-    if (throttleCheck.locked) {
-      // Return 200 with error details
+    // 0. Kiểm tra Captcha Lock từ Database
+    const captchaLockCheck = await this.authThrottler.checkLock(email, ip, LockReason.CAPTCHA);
+    if (captchaLockCheck.locked) {
       return {
-        message: throttleCheck.message || 'Tài khoản tạm thời bị khóa.',
-        data: null,
-        errorCode: throttleCheck.errorCode || 'AUTH_LOCKED',
+        message: captchaLockCheck.message || 'Tài khoản bị khóa do sai mã xác nhận.',
+        data: { lockUntil: captchaLockCheck.lockUntil, lockReason: captchaLockCheck.lockReason },
+        errorCode: captchaLockCheck.errorCode || 'AUTH_LOCKED',
       };
     }
 
     // 0.1 Validate Captcha Server-Side
     const isCaptchaValid = await this.validateCaptcha(captchaId, captchaCode);
     if (!isCaptchaValid) {
-      // Nhập sai Captcha -> Tăng đếm lỗi ngay lập tức
-      await this.authThrottler.increment(ip, email);
+      // Nhập sai Captcha → Tăng đếm lỗi ngay lập tức
+      await this.authThrottler.incrementAttempt(email, ip, LockReason.CAPTCHA);
       return {
         message: 'Mã xác nhận không chính xác hoặc đã hết hạn',
         data: null,
@@ -190,11 +194,21 @@ export class AuthService {
       };
     }
 
+    // 1. Kiểm tra Password Lock từ Database
+    const passwordLockCheck = await this.authThrottler.checkLock(email, ip, LockReason.PASSWORD);
+    if (passwordLockCheck.locked) {
+      return {
+        message: passwordLockCheck.message || 'Tài khoản bị khóa do sai mật khẩu.',
+        data: { lockUntil: passwordLockCheck.lockUntil, lockReason: passwordLockCheck.lockReason },
+        errorCode: passwordLockCheck.errorCode || 'AUTH_LOCKED',
+      };
+    }
+
     // Tìm người dùng theo email
     const user = await this.userModel.findOne({ email });
     if (!user) {
-      // Tăng số lần sai kể cả khi user không tồn tại (chống dò email)
-      await this.authThrottler.increment(ip, email);
+      // Tăng số lần sai password (chống dò email)
+      await this.authThrottler.incrementAttempt(email, ip, LockReason.PASSWORD);
       return {
         message: 'Email chưa được đăng ký',
         data: null,
@@ -206,13 +220,13 @@ export class AuthService {
     try {
       const result = await this.authRepo.handleLogin(user, password, ip, userAgent);
 
-      // Đăng nhập thành công -> Reset bộ đếm
-      await this.authThrottler.reset(ip, email);
+      // Đăng nhập thành công → Reset tất cả locks
+      await this.authThrottler.resetLock(email, ip);
 
       return result;
     } catch {
-      // Nếu đăng nhập thất bại (sai pass - có exception) -> Tăng số lần sai
-      await this.authThrottler.increment(ip, email);
+      // Nếu đăng nhập thất bại (sai pass) → Tăng số lần sai password
+      await this.authThrottler.incrementAttempt(email, ip, LockReason.PASSWORD);
 
       // Instead of throwing, catch and return error
       return {

@@ -12,14 +12,13 @@ export default function SlugDispatcher() {
   const [viewMode, setViewMode] = useState<
     "loading" | "list" | "detail" | "404"
   >("loading");
-  const [initialData, setInitialData] = useState<any>(null); // CategoryCode (string) or ProductData (object)
+  const [initialData, setInitialData] = useState<any>(null);
 
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const slugArray = params?.slug;
 
-    if (!slugArray || !Array.isArray(slugArray) || slugArray.length === 0) {
-      // Should not happen in [...slug] route, but if it does, 404
+    if (!slugArray || !Array.isArray(slugArray)) {
       setViewMode("404");
       return;
     }
@@ -33,12 +32,12 @@ export default function SlugDispatcher() {
       try {
         const catRes = await productService.getCategoryBySlug(lastSlug);
         if (catRes && catRes.data) {
-          setInitialData(catRes.data.code); // Store Code
+          setInitialData(catRes.data.code);
           setViewMode("list");
           return;
         }
       } catch (e) {
-        // Ignore error, try product
+        // Ignore
       }
 
       // 2. Check Product

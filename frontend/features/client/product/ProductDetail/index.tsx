@@ -10,13 +10,18 @@ import { productService } from "../services/product.service";
 import { ProductData } from "../types";
 
 // Breadcrumb simple component
+// Breadcrumb simple component
 function Breadcrumb({
-  category,
-  subcategory,
+  categoryName,
+  categorySlug,
+  subcategoryName,
+  subcategorySlug,
   name,
 }: {
-  category: string;
-  subcategory: string;
+  categoryName: string;
+  categorySlug?: string;
+  subcategoryName?: string;
+  subcategorySlug?: string;
   name: string;
 }) {
   return (
@@ -25,19 +30,35 @@ function Breadcrumb({
         Trang chủ
       </Link>
       <span>/</span>
-      <Link
-        href={`/${category}`}
-        className="hover:text-blue-600 cursor-pointer"
-      >
-        {category}
+      <Link href="/product" className="hover:text-blue-600 cursor-pointer">
+        Sản phẩm
       </Link>
-      <span>/</span>
-      <Link
-        href={`/${subcategory}`}
-        className="hover:text-blue-600 cursor-pointer font-medium text-gray-700"
-      >
-        {subcategory}
-      </Link>
+      {categoryName && (
+        <>
+          <span>/</span>
+          <Link
+            href={categorySlug ? `/product/${categorySlug}` : "#"}
+            className="hover:text-blue-600 cursor-pointer"
+          >
+            {categoryName}
+          </Link>
+        </>
+      )}
+      {subcategoryName && (
+        <>
+          <span>/</span>
+          <Link
+            href={
+              categorySlug && subcategorySlug
+                ? `/product/${categorySlug}/${subcategorySlug}`
+                : "#"
+            }
+            className="hover:text-blue-600 cursor-pointer font-medium text-gray-700"
+          >
+            {subcategoryName}
+          </Link>
+        </>
+      )}
       <span className="text-gray-300 hidden sm:inline">|</span>
       <span className="text-gray-400 truncate max-w-[200px] sm:max-w-none line-clamp-1">
         {name}
@@ -105,44 +126,44 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps) {
   }
 
   return (
-    <section className="bg-gray-50 min-h-screen py-6 md:py-10">
-      <div className="container mx-auto px-4">
-        <Breadcrumb
-          category={product.category || "Sản phẩm"}
-          subcategory={product.subcategory || ""}
-          name={product.name}
-        />
+    <div className="py-4">
+      <Breadcrumb
+        categoryName={product.category || "Sản phẩm"}
+        categorySlug={product.categorySlug}
+        subcategoryName={product.subcategory}
+        subcategorySlug={product.subcategorySlug}
+        name={product.name}
+      />
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
-            {/* Left Column: Gallery */}
-            <div className="lg:col-span-5">
-              <ProductGallery
-                images={
-                  [
-                    product.cover?.url,
-                    ...(product.gallery?.map((g) => g.url) || []),
-                  ].filter((url): url is string => !!url) || [
-                    product.cover?.url || "",
-                  ]
-                }
-                productName={product.name}
-              />
-            </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
+          {/* Left Column: Gallery */}
+          <div className="lg:col-span-5">
+            <ProductGallery
+              images={
+                [
+                  product.cover?.url,
+                  ...(product.gallery?.map((g) => g.url) || []),
+                ].filter((url): url is string => !!url) || [
+                  product.cover?.url || "",
+                ]
+              }
+              productName={product.name}
+            />
+          </div>
 
-            {/* Right Column: Info */}
-            <div className="lg:col-span-7 flex flex-col h-full">
-              <ProductInfo product={product} />
-            </div>
+          {/* Right Column: Info */}
+          <div className="lg:col-span-7 flex flex-col h-full">
+            <ProductInfo product={product} />
           </div>
         </div>
-
-        {/* Tabs & Details */}
-        <ProductTabs product={product} />
-
-        {/* Related Products */}
-        <RelatedProducts currentProductCode={product.productCode} />
       </div>
-    </section>
+
+      {/* Tabs & Details */}
+      <ProductTabs product={product} />
+
+      {/* Related Products */}
+      <RelatedProducts currentProductCode={product.productCode} />
+    </div>
   );
 }

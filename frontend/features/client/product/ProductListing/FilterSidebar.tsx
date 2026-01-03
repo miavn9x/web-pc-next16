@@ -41,7 +41,13 @@ const FilterSection = ({
   );
 };
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import {
+  useRouter,
+  usePathname,
+  useSearchParams,
+  useParams,
+} from "next/navigation";
+import { useMemo } from "react";
 
 interface FilterSidebarProps {
   activeCategoryCode?: string | null;
@@ -66,18 +72,44 @@ const findSlugPath = (
   return null;
 };
 
+const findCodeBySlug = (nodes: CategoryNode[], slug: string): string | null => {
+  for (const node of nodes) {
+    if (node.slug === slug) return node.code;
+    if (node.children) {
+      const found = findCodeBySlug(node.children, slug);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
 export default function FilterSidebar({
   activeCategoryCode,
 }: FilterSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // Prefer prop, fall back to query param
-  const activeCategory = activeCategoryCode || searchParams.get("category");
+  const params = useParams();
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const activeCategory = useMemo(() => {
+    if (activeCategoryCode) return activeCategoryCode;
+
+    const queryCat = searchParams.get("category");
+    if (queryCat) return queryCat;
+
+    const slugArray = params?.slug;
+    if (slugArray && categories.length > 0) {
+      const lastSlug = Array.isArray(slugArray)
+        ? slugArray[slugArray.length - 1]
+        : slugArray;
+      return findCodeBySlug(categories, lastSlug);
+    }
+    return null;
+  }, [activeCategoryCode, searchParams, params?.slug, categories]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -101,8 +133,10 @@ export default function FilterSidebar({
     }
 
     const path = findSlugPath(categories, code);
-    if (path) {
-      router.push(`/product/${path.join("/")}`);
+    if (path && path.length > 0) {
+      // User request: Single slug only (no hierarchy)
+      const targetSlug = path[path.length - 1];
+      router.push(`/product/${targetSlug}`);
     } else {
       // Fallback
       const params = new URLSearchParams(searchParams.toString());

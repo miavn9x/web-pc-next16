@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/client/cart/context/CartContext";
+import { getProductImageUrl } from "@/shared/utlis/image.utils";
 
 interface ProductCardProps {
   productCode: string; // Unique identifier
@@ -62,7 +63,6 @@ export default function ProductCard({
           <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
             Giảm {calculatedDiscount}%
           </div>
-          
         )}
         {/* Decorative localized tag corner */}
         <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-10"></div>
@@ -71,7 +71,7 @@ export default function ProductCard({
       {/* Product Image Area */}
       <div className="relative w-full aspect-square overflow-hidden rounded-t-lg group/image p-2">
         <Image
-          src={image}
+          src={getProductImageUrl(image)}
           alt={name}
           fill
           className="object-contain transition-transform duration-500 group-hover/image:scale-105"
@@ -95,8 +95,6 @@ export default function ProductCard({
         >
           {name}
         </h3>
-
-
 
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">

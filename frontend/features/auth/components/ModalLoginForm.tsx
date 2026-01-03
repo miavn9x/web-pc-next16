@@ -18,6 +18,12 @@ export const ModalLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  // Initial IP Check
+  useEffect(() => {
+    // Fetch captcha (check IP lock) on mount
+    fetchCaptchaWithEmail("");
+  }, []);
+
   // Server-side Captcha State
   const [captchaInput, setCaptchaInput] = useState("");
   const [captchaImage, setCaptchaImage] = useState("");
@@ -49,43 +55,46 @@ export const ModalLoginForm = () => {
         setCaptchaId("");
         setCaptchaInput("");
 
-        // Start polling to check when lock expires
-        startPolling(emailValue);
+        // Timeout to auto-refresh after lock expires
+        scheduleUnlock(data.lockInfo.lockUntil);
       } else {
         // Not locked → Show captcha
         setCaptchaId(data.captchaId || "");
         setCaptchaImage(data.captchaImage || "");
         setLocalLockUntil(null);
         setLockReason(null);
-
-        // Stop polling if it was running
-        stopPolling();
       }
     } catch (error: any) {
       if (error?.response?.status === 429) {
-        toast.error("Thao tác quá nhanh. Vui lòng đợi!");
+        // Ignore specific 429s or show specific message
+        // toast.error("Thao tác quá nhanh. Vui lòng đợi!");
       } else {
-        toast.error("Lỗi tải captcha.");
+        console.error("Captcha fetch error", error);
       }
     } finally {
       setIsFetchingCaptcha(false);
     }
   };
 
-  // Start polling to auto-refresh captcha when lock expires
-  const startPolling = (emailValue: string) => {
-    // Clear existing interval
-    stopPolling();
+  // Schedule auto-refresh when lock expires
+  const scheduleUnlock = (lockUntilStr?: string | number) => {
+    if (!lockUntilStr) return;
+    const lockUntil = new Date(lockUntilStr).getTime();
+    const now = Date.now();
+    const delay = Math.max(0, lockUntil - now) + 1000; // +1s safety buffer
 
-    // Poll every 10 seconds
-    pollingIntervalRef.current = setInterval(() => {
-      fetchCaptchaWithEmail(emailValue);
-    }, 10000);
+    if (pollingIntervalRef.current) clearTimeout(pollingIntervalRef.current);
+
+    pollingIntervalRef.current = setTimeout(() => {
+      setLocalLockUntil(null);
+      // Re-fetch captcha to confirm unlock (pass current email or empty)
+      fetchCaptchaWithEmail(emailRef.current?.value || "");
+    }, delay);
   };
 
   const stopPolling = () => {
     if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+      clearTimeout(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
   };
@@ -99,12 +108,18 @@ export const ModalLoginForm = () => {
   useEffect(() => {
     // Only fetch when email is valid format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      // Clear captcha if email is invalid
+    if (email && !emailRegex.test(email)) {
+      // Invalid email format but not empty -> maybe wait?
+      // For now just clear if invalid
       setCaptchaImage("");
-      setCaptchaId("");
-      setCaptchaInput("");
-      stopPolling();
+      return;
+    }
+
+    // If email is empty, we don't fetch automatically UNLESS it's the initial mount check (handled separately)
+    // But if user clears email, we might want to reset?
+    if (!email) {
+      // Optional: fetch generic captcha (IP check)
+      // fetchCaptchaWithEmail("");
       return;
     }
 
@@ -287,7 +302,7 @@ export const ModalLoginForm = () => {
           setLockReason(lockData.lockReason);
           setCaptchaImage("");
           setCaptchaId("");
-          startPolling(email);
+          scheduleUnlock(lockData.lockUntil);
           toast.error(error.response.data.message);
           return;
         }

@@ -16,6 +16,7 @@ export interface Category {
   code: string;
   name: string;
   slug: string;
+  icon?: string; // Icon name
   priceRanges?: PriceRange[];
   children?: Category[];
   isActive: boolean;
@@ -28,6 +29,7 @@ export interface Category {
 export interface CreateCategoryDto {
   code?: string;
   name: string;
+  icon?: string;
   priceRanges?: PriceRange[];
   children?: CreateCategoryDto[];
   isActive?: boolean;
@@ -35,6 +37,7 @@ export interface CreateCategoryDto {
 
 export interface UpdateCategoryDto {
   name?: string;
+  icon?: string;
   priceRanges?: PriceRange[];
   children?: CreateCategoryDto[];
   isActive?: boolean;

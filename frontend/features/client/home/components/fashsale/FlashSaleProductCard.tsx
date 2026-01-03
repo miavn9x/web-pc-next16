@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/client/cart/context/CartContext";
+import { getProductImageUrl } from "@/shared/utlis/image.utils";
 
 interface ProductCardProps {
   productCode: string;
@@ -12,6 +13,7 @@ interface ProductCardProps {
   price: number;
   originalPrice: number;
   discount: number;
+  slug: string;
 }
 
 export default function FlashSaleProductCard({
@@ -21,6 +23,7 @@ export default function FlashSaleProductCard({
   price,
   originalPrice,
   discount,
+  slug,
 }: ProductCardProps) {
   const { addToCart } = useCart();
 
@@ -37,6 +40,12 @@ export default function FlashSaleProductCard({
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer group/card h-full flex flex-col relative border border-gray-100">
+      <Link
+        href={`/product/${slug}`}
+        className="absolute inset-0 z-30"
+        prefetch={false}
+      />
+
       {/* Discount Tag */}
       <div className="absolute top-0 left-0 z-40 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg  skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
         Giảm {discount}%
@@ -48,7 +57,7 @@ export default function FlashSaleProductCard({
       {/* Image */}
       <div className="relative w-full aspect-square overflow-hidden rounded-t-lg group/image">
         <Image
-          src={image}
+          src={getProductImageUrl(image)}
           alt={name}
           fill
           className="object-contain transition-transform duration-500"
@@ -97,7 +106,7 @@ export default function FlashSaleProductCard({
               e.stopPropagation();
               handleAddToCart();
             }}
-            className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm group/cart active:scale-95"
+            className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm group/cart active:scale-95 relative z-40"
             title="Thêm vào giỏ"
           >
             <ShoppingCart size={16} />

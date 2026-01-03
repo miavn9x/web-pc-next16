@@ -90,6 +90,9 @@ export class Product extends Document {
   isFeatured: boolean;
 
   @Prop({ default: false })
+  isNewArrival: boolean;
+
+  @Prop({ default: false })
   isBuildPc: boolean;
 
   @Prop({ default: 0 })

@@ -171,8 +171,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async getCaptcha(@Body('email') email?: string, @Ip() ip?: string) {
     // 1. Nếu có email → Kiểm tra lock trước khi trả captcha
-    if (email && ip) {
-      const lockCheck = await this.authService.checkCaptchaLock(email, ip);
+    // 1. Kiểm tra lock trước khi trả captcha (Check IP hoặc Email)
+    if (ip) {
+      const lockCheck = await this.authService.checkCaptchaLock(email || '', ip);
 
       if (lockCheck.locked) {
         // Đang bị lock → Trả lock info, KHÔNG trả captcha

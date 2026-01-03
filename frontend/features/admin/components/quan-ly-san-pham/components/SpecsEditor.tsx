@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { ProductSpec } from "../types";
+import IconSelector from "../../quan-ly-danh-muc/components/IconSelector";
 
 interface SpecsEditorProps {
   specs: ProductSpec[];
@@ -15,6 +16,7 @@ const SpecsEditor = ({ specs, onChange }: SpecsEditorProps) => {
       value: "",
       order: specs.length + 1,
       showInListing: false,
+      icon: "",
     };
     onChange([...specs, newSpec]);
   };
@@ -153,8 +155,20 @@ const SpecsEditor = ({ specs, onChange }: SpecsEditorProps) => {
               </div>
 
               {/* Inputs */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Icon Selector */}
                 <div className="space-y-1">
+                  <IconSelector
+                    value={spec.icon}
+                    onChange={(val) => handleUpdate(index, "icon", val)}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  {/* Label to align with IconSelector's internal label */}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên thông số
+                  </label>
                   <input
                     type="text"
                     value={spec.label}
@@ -162,10 +176,13 @@ const SpecsEditor = ({ specs, onChange }: SpecsEditorProps) => {
                       handleUpdate(index, "label", e.target.value)
                     }
                     placeholder="Tên (VD: CPU)"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow shadow-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow shadow-sm"
                   />
                 </div>
                 <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Giá trị
+                  </label>
                   <input
                     type="text"
                     value={spec.value}
@@ -173,7 +190,7 @@ const SpecsEditor = ({ specs, onChange }: SpecsEditorProps) => {
                       handleUpdate(index, "value", e.target.value)
                     }
                     placeholder="Giá trị (VD: Core i5)"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow shadow-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow shadow-sm"
                   />
                 </div>
               </div>

@@ -1,27 +1,39 @@
-export interface ProductSpecs {
-    [key: string]: string;
-}
+export type ProductSpecs = {
+  label: string;
+  value: string;
+  order?: number;
+  showInListing?: boolean;
+  icon?: string;
+}[];
 
 export interface ProductFilters {
-    [key: string]: string;
+  [key: string]: string;
 }
 
 export interface ProductData {
-    productCode: string;
-    name: string;
-    category: string;
-    categorySlug: string;
-    subcategory: string;
-    subcategorySlug: string;
-    brand: string;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    image: string;
-    images: string[];
-    slug: string;
-    searchKey: string;
-    specs: ProductSpecs;
-    filters: ProductFilters;
-    description: string;
+  productCode: string;
+  name: string;
+  category: string;
+  categorySlug: string;
+  subcategory: string;
+  subcategorySlug: string;
+  brand: string;
+  price: number;
+  originalPrice: number;
+  discount: number;
+  cover: {
+    url: string;
+  };
+  image?: string;
+  images: string[];
+  slug: string;
+  searchKey: string;
+  specs: ProductSpecs;
+  filters: ProductFilters;
+  gallery: {
+    url: string;
+    mediaCode?: string;
+  }[];
+  description: string;
+  isNewArrival?: boolean;
 }

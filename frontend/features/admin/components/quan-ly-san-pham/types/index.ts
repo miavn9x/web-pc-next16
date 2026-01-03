@@ -10,6 +10,7 @@ export interface ProductSpec {
   value: string;
   order: number;
   showInListing: boolean;
+  icon?: string;
 }
 
 export interface Product {
@@ -31,6 +32,7 @@ export interface Product {
   content?: string;
   isActive: boolean;
   isFeatured: boolean;
+  isNewArrival?: boolean;
   isBuildPc?: boolean; // New flag
   viewCount?: number;
   soldCount?: number;
@@ -54,6 +56,7 @@ export interface ProductFormData {
   content?: string;
   isActive: boolean;
   isFeatured: boolean;
+  isNewArrival?: boolean;
   isBuildPc?: boolean;
 }
 

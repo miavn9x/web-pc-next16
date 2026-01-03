@@ -211,6 +211,9 @@ export class ProductService {
 
     const products = await this.productModel
       .find(query)
+      .select(
+        'name productCode price originalPrice discount cover slug categorySlug isFeatured isBuildPc viewCount createdAt',
+      )
       .sort({ [sortField]: sortDirection })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -320,5 +323,25 @@ export class ProductService {
     const product = await this.findByCode(productCode);
     product.isBuildPc = !product.isBuildPc;
     return product.save();
+  }
+
+  async getPriceRange(): Promise<{ min: number; max: number }> {
+    const result = await this.productModel
+      .aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: null,
+            min: { $min: '$price' },
+            max: { $max: '$price' },
+          },
+        },
+      ])
+      .exec();
+
+    if (result.length > 0) {
+      return { min: result[0].min || 0, max: result[0].max || 0 };
+    }
+    return { min: 0, max: 0 };
   }
 }

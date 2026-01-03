@@ -1,18 +1,61 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, Home, Grid, List as ListIcon } from "lucide-react";
+import { ChevronRight, Grid, List as ListIcon } from "lucide-react";
 import FilterSidebar from "./FilterSidebar";
 import ProductCard from "../components/ProductCard";
-
-import { PRODUCT_DETAIL_DATA } from "../data/mockData";
+import { productService } from "../services/product.service";
 import { ProductData } from "../types";
-
-// Convert object to array for listing
-const PRODUCTS: ProductData[] = Object.values(PRODUCT_DETAIL_DATA);
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export default function ProductListing() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [products, setProducts] = useState<ProductData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [meta, setMeta] = useState({
+    page: 1,
+    limit: 20,
+    totalPages: 1,
+    total: 0,
+  });
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+
+      const page = Number(searchParams.get("page")) || 1;
+      const minPrice = searchParams.get("minPrice")
+        ? Number(searchParams.get("minPrice"))
+        : undefined;
+      const maxPrice = searchParams.get("maxPrice")
+        ? Number(searchParams.get("maxPrice"))
+        : undefined;
+      const sortBy = searchParams.get("sortBy") || undefined;
+      // Add more params as needed
+
+      const res = await productService.getProducts({
+        page,
+        limit: 20,
+        minPrice,
+        maxPrice,
+        sortBy,
+      });
+      setProducts(res.data);
+      setMeta(res.meta);
+    } catch (error) {
+      console.error("Failed to fetch products", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [searchParams]); // Run when URL params change
+
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col py-2">
       <div className="container mx-auto px-2 flex-1 flex flex-col">
@@ -31,10 +74,10 @@ export default function ProductListing() {
                   Sắp xếp theo:
                 </span>
                 <select className="text-sm border-gray-200 rounded-md py-1.5 focus:ring-red-500 focus:border-red-500">
-                  <option>Giá tăng dần</option>
-                  <option>Giá giảm dần</option>
-                  <option>Mới nhất</option>
-                  <option>Bán chạy nhất</option>
+                  <option value="price_asc">Giá tăng dần</option>
+                  <option value="price_desc">Giá giảm dần</option>
+                  <option value="newest">Mới nhất</option>
+                  <option value="bestseller">Bán chạy nhất</option>
                 </select>
               </div>
 
@@ -50,78 +93,93 @@ export default function ProductListing() {
             </div>
 
             {/* Product Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-2">
-              {PRODUCTS.map((product) => (
-                <ProductCard
-                  key={product.productCode}
-                  productCode={product.productCode}
-                  name={product.name}
-                  image={product.image}
-                  price={product.price}
-                  originalPrice={product.originalPrice}
-                  discount={product.discount}
-                  slug={product.slug}
-                  isNew={true} // Simulation
-                />
-              ))}
-              {/* Duplicate Items to Fill Grid for Visual */}
-              {PRODUCTS.map((product) => (
-                <ProductCard
-                  key={`${product.productCode}-dup`}
-                  productCode={`${product.productCode}-dup`}
-                  name={product.name}
-                  image={product.image}
-                  price={product.price}
-                  originalPrice={product.originalPrice}
-                  discount={product.discount}
-                  slug={product.slug}
-                  isHot={true} // Simulation
-                />
-              ))}
-              {/* Duplicate Items to Fill Grid for Visual */}
-              {PRODUCTS.map((product) => (
-                <ProductCard
-                  key={`${product.productCode}-dup-2`}
-                  productCode={`${product.productCode}-dup-2`}
-                  name={product.name}
-                  image={product.image}
-                  price={product.price}
-                  originalPrice={product.originalPrice}
-                  discount={product.discount}
-                  slug={product.slug}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-2">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg p-4 h-80 animate-pulse"
+                  >
+                    <div className="bg-gray-200 h-40 w-full mb-4 rounded"></div>
+                    <div className="h-4 bg-gray-200 w-3/4 mb-2 rounded"></div>
+                    <div className="h-4 bg-gray-200 w-1/2 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-2">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.productCode}
+                    productCode={product.productCode}
+                    name={product.name}
+                    image={product.cover?.url || ""}
+                    price={product.price}
+                    originalPrice={product.originalPrice}
+                    discount={product.discount}
+                    slug={product.slug}
+                    // isNew={product.isNew} // Add backend field later if needed
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-lg">
+                <p className="text-gray-500">Không tìm thấy sản phẩm nào.</p>
+              </div>
+            )}
 
-            {/* Pagination Mock */}
-            <div className="mt-auto pt-8 flex justify-center items-center gap-2">
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                <ChevronRight className="rotate-180" size={16} />
-              </button>
+            {/* Pagination */}
+            {meta.totalPages > 1 && (
+              <div className="mt-auto pt-8 flex justify-center items-center gap-2">
+                <button
+                  onClick={() => {
+                    const current = new URLSearchParams(
+                      Array.from(searchParams.entries())
+                    );
+                    current.set("page", (meta.page - 1).toString());
+                    router.push(`${pathname}?${current.toString()}`);
+                  }}
+                  disabled={meta.page === 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="rotate-180" size={16} />
+                </button>
 
-              <button className="w-9 h-9 flex items-center justify-center rounded-full bg-red-600 text-white font-bold shadow-sm hover:bg-red-700 transition-all">
-                1
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:border-red-600 hover:text-red-600 transition-all font-medium">
-                2
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:border-red-600 hover:text-red-600 transition-all font-medium">
-                3
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:border-red-600 hover:text-red-600 transition-all font-medium">
-                4
-              </button>
-              <span className="w-9 flex items-center justify-center pb-2 text-gray-400 font-bold tracking-widest text-lg">
-                ...
-              </span>
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:border-red-600 hover:text-red-600 transition-all font-medium">
-                12
-              </button>
+                {[...Array(meta.totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => {
+                      const current = new URLSearchParams(
+                        Array.from(searchParams.entries())
+                      );
+                      current.set("page", (i + 1).toString());
+                      router.push(`${pathname}?${current.toString()}`);
+                    }}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all font-medium ${
+                      meta.page === i + 1
+                        ? "bg-red-600 text-white border-red-600 shadow-sm"
+                        : "border-gray-200 text-gray-600 hover:border-red-600 hover:text-red-600"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
 
-              <button className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+                <button
+                  onClick={() => {
+                    const current = new URLSearchParams(
+                      Array.from(searchParams.entries())
+                    );
+                    current.set("page", (meta.page + 1).toString());
+                    router.push(`${pathname}?${current.toString()}`);
+                  }}
+                  disabled={meta.page === meta.totalPages}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </main>
         </div>
       </div>

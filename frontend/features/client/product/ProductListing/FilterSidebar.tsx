@@ -1,202 +1,18 @@
 "use client";
 
-import {
-  ChevronDown,
-  ChevronUp,
-  Search,
-  Monitor,
-  Cpu,
-  CircuitBoard,
-  CreditCard,
-  HardDrive,
-  Zap,
-} from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { productService } from "../services/product.service";
+import { getIconComponent } from "@/shared/components/icons/IconRegistry";
 
-// DATA STRUCTURES
-const CATEGORIES = [
-  { name: "PC - Máy Tính Bộ", icon: <Monitor size={16} /> },
-  { name: "CPU - Bộ Vi Xử Lý", icon: <Cpu size={16} /> },
-  { name: "Mainboard - Bo Mạch Chủ", icon: <CircuitBoard size={16} /> },
-  { name: "VGA - Card Màn Hình", icon: <CreditCard size={16} /> },
-  { name: "RAM - Bộ Nhớ Trong", icon: <HardDrive size={16} /> },
-  { name: "Ổ Cứng HDD, SSD", icon: <HardDrive size={16} /> },
-  { name: "PSU - Nguồn Máy Tính", icon: <Zap size={16} /> },
-  { name: "Màn Hình", icon: <Monitor size={16} /> },
-];
-
-const SUB_CATEGORIES: any = {
-  0: {
-    columns: [
-      {
-        title: "PC Chơi Game",
-        items: [
-          { name: "PC Gaming (< 10tr)" },
-          { name: "PC Gaming (10-15tr)" },
-          { name: "PC Gaming (15-25tr)" },
-          { name: "PC Gaming (25-40tr)" },
-          { name: "PC Gaming (> 40tr)" },
-        ],
-      },
-      {
-        title: "PC Đồ Họa & Văn Phòng",
-        items: [
-          { name: "PC Đồ Họa" },
-          { name: "PC Giả Lập" },
-          { name: "PC Văn Phòng" },
-          { name: "PC Đồng Bộ" },
-        ],
-      },
-    ],
-  },
-  1: {
-    columns: [
-      {
-        title: "CPU Intel",
-        items: [
-          { name: "Core i9" },
-          { name: "Core i7" },
-          { name: "Core i5" },
-          { name: "Core i3" },
-          { name: "Intel Xeon" },
-          { name: "Pentium / Celeron" },
-        ],
-      },
-      {
-        title: "CPU AMD",
-        items: [
-          { name: "Ryzen 9" },
-          { name: "Ryzen 7" },
-          { name: "Ryzen 5" },
-          { name: "Ryzen 3" },
-          { name: "Threadripper" },
-        ],
-      },
-    ],
-  },
-  2: {
-    columns: [
-      {
-        title: "Mainboard Intel",
-        items: [
-          { name: "Z790 / Z690" },
-          { name: "B760 / B660" },
-          { name: "H610" },
-          { name: "Z590 / Z490" },
-        ],
-      },
-      {
-        title: "Mainboard AMD",
-        items: [
-          { name: "X670 / X670E" },
-          { name: "B650 / B650E" },
-          { name: "X570" },
-          { name: "B550" },
-        ],
-      },
-    ],
-  },
-  3: {
-    columns: [
-      {
-        title: "NVIDIA GeForce",
-        items: [
-          { name: "RTX 4090" },
-          { name: "RTX 4080" },
-          { name: "RTX 4070" },
-          { name: "RTX 4060" },
-          { name: "RTX 3060" },
-        ],
-      },
-      {
-        title: "AMD Radeon",
-        items: [
-          { name: "RX 7900 XTX" },
-          { name: "RX 7800 XT" },
-          { name: "RX 7700 XT" },
-          { name: "RX 7600" },
-        ],
-      },
-    ],
-  },
-  4: {
-    columns: [
-      {
-        title: "Loại RAM",
-        items: [{ name: "DDR5" }, { name: "DDR4" }, { name: "DDR3" }],
-      },
-      {
-        title: "Dung Lượng",
-        items: [
-          { name: "8GB" },
-          { name: "16GB" },
-          { name: "32GB" },
-          { name: "64GB" },
-        ],
-      },
-    ],
-  },
-  5: {
-    columns: [
-      {
-        title: "Loại Ổ Cứng",
-        items: [
-          { name: "SSD NVMe Gen 4" },
-          { name: "SSD NVMe Gen 3" },
-          { name: "SSD SATA" },
-          { name: "HDD" },
-        ],
-      },
-      {
-        title: "Dung Lượng",
-        items: [
-          { name: "256GB" },
-          { name: "512GB" },
-          { name: "1TB" },
-          { name: "2TB" },
-        ],
-      },
-    ],
-  },
-  6: {
-    columns: [
-      {
-        title: "Chuẩn Nguồn",
-        items: [
-          { name: "80 Plus Bronze" },
-          { name: "80 Plus Gold" },
-          { name: "80 Plus Platinum" },
-        ],
-      },
-      {
-        title: "Công Suất",
-        items: [
-          { name: "Dưới 650W" },
-          { name: "650W - 750W" },
-          { name: "750W - 1000W" },
-          { name: "Trên 1000W" },
-        ],
-      },
-    ],
-  },
-  7: {
-    columns: [
-      {
-        title: "Kích Thước",
-        items: [
-          { name: "24 inch" },
-          { name: "27 inch" },
-          { name: "32 inch" },
-          { name: "34 inch Ultrawide" },
-        ],
-      },
-      {
-        title: "Độ phân giải",
-        items: [{ name: "Full HD" }, { name: "2K" }, { name: "4K" }],
-      },
-    ],
-  },
-};
+interface CategoryNode {
+  code: string;
+  name: string;
+  slug: string;
+  icon?: string;
+  children?: CategoryNode[];
+}
 
 const FilterSection = ({
   title,
@@ -227,40 +43,69 @@ const FilterSection = ({
 };
 
 export default function FilterSidebar() {
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleCategory = (index: number) => {
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await productService.getCategoriesTree();
+        setCategories(res.data);
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const toggleCategory = (code: string) => {
     setExpandedCategories((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
     );
   };
 
+  const renderIcon = (iconName?: string) => {
+    if (!iconName) return null;
+    const Icon = getIconComponent(iconName);
+    return Icon ? <Icon size={16} /> : null;
+  };
+
+  if (loading)
+    return (
+      <div className="p-4 text-center text-gray-400">Đang tải danh mục...</div>
+    );
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-2">
-      {/* Product Categories (Flat List) */}
+      {/* Product Categories (Dynamic Tree) */}
       <div className="mb-6 space-y-1">
-        {CATEGORIES.map((cat, index) => {
-          const subData = SUB_CATEGORIES[index];
-          const isExpanded = expandedCategories.includes(index);
+        {categories.map((cat) => {
+          const isExpanded = expandedCategories.includes(cat.code);
+          const hasChildren = cat.children && cat.children.length > 0;
 
           return (
             <div
-              key={index}
+              key={cat.code}
               className="border-b border-gray-50 last:border-0 pb-1"
             >
               <div
-                onClick={() => toggleCategory(index)}
-                className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors group"
+                onClick={() => hasChildren && toggleCategory(cat.code)}
+                className={`flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors group ${
+                  !hasChildren ? "cursor-pointer hover:text-[#103E8F]" : ""
+                }`}
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-gray-400 group-hover:text-[#103E8F] transition-colors">
-                    {cat.icon}
+                    {renderIcon(cat.icon)}
                   </span>
                   <span className="text-[13px] font-medium text-gray-700 group-hover:text-[#103E8F] transition-colors">
                     {cat.name}
                   </span>
                 </div>
-                {subData && (
+                {hasChildren && (
                   <ChevronDown
                     size={14}
                     className={`text-gray-400 transition-transform ${
@@ -270,32 +115,56 @@ export default function FilterSidebar() {
                 )}
               </div>
 
-              {/* Sub Categories */}
-              {isExpanded && subData && (
+              {/* Sub Categories (Children) */}
+              {isExpanded && hasChildren && (
                 <div className="pl-9 pr-2 pb-2 space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                  {subData.columns.map((col: any, colIdx: number) => (
-                    <div key={colIdx}>
-                      <h4 className="text-[11px] font-bold text-gray-500 uppercase mb-1.5">
-                        {col.title}
-                      </h4>
-                      <div className="space-y-1 border-l-2 border-gray-100 pl-2">
-                        {col.items.map((item: any, itemIdx: number) => (
-                          <label
-                            key={itemIdx}
-                            className="flex items-center gap-2 cursor-pointer group/item select-none"
-                          >
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* 
+                        Recursive rendering logic can be complex for infinite nesting.
+                        For now, let's assume max depth 3 (Root -> Level 1 -> Level 2) as per previous data structure.
+                        We can iterate children (Level 1) and their children (Level 2).
+                     */}
+                    {cat.children?.map((child) => (
+                      <div key={child.code}>
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase mb-1.5 hover:text-[#103E8F] cursor-pointer">
+                          {child.name}
+                        </h4>
+                        {child.children && child.children.length > 0 && (
+                          <div className="space-y-1 border-l-2 border-gray-100 pl-2">
+                            {child.children.map((subChild) => (
+                              <label
+                                key={subChild.code}
+                                className="flex items-center gap-2 cursor-pointer group/item select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="appearance-none w-3 h-3 border border-gray-300 rounded-sm checked:bg-[#103E8F] checked:border-[#103E8F] transition-all"
+                                />
+                                <span className="text-[11px] text-gray-600 group-hover/item:text-[#103E8F] transition-colors">
+                                  {subChild.name}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        {/* If no L2 children, just show L1 as clickable/checkable item? 
+                             Or maybe L1 itself is the item if it has no children.
+                             Refined logic: If L1 has no children, render it as item.
+                         */}
+                        {(!child.children || child.children.length === 0) && (
+                          <label className="flex items-center gap-2 cursor-pointer group/item select-none pl-2">
                             <input
                               type="checkbox"
                               className="appearance-none w-3 h-3 border border-gray-300 rounded-sm checked:bg-[#103E8F] checked:border-[#103E8F] transition-all"
                             />
                             <span className="text-[11px] text-gray-600 group-hover/item:text-[#103E8F] transition-colors">
-                              {item.name}
+                              Xem tất cả {child.name}
                             </span>
                           </label>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -305,31 +174,187 @@ export default function FilterSidebar() {
 
       {/* Price */}
       <FilterSection title="Mức giá">
-        <div className="px-1 py-1">
-          <input
-            type="range"
-            min="0"
-            max="100000000"
-            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#E31837]"
-          />
-          <div className="flex items-center gap-2 mt-4">
-            <input
-              type="number"
-              placeholder="Từ"
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:border-[#103E8F] focus:outline-none"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="number"
-              placeholder="Đến"
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:border-[#103E8F] focus:outline-none"
-            />
-          </div>
-          <button className="w-full mt-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-[#103E8F] hover:text-white transition-colors">
-            Áp dụng
-          </button>
-        </div>
+        <PriceFilter />
       </FilterSection>
     </div>
   );
 }
+
+import DualRangeSlider from "@/shared/components/ui/DualRangeSlider";
+
+const PriceFilter = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [maxPrice, setMaxPrice] = useState(100000000); // Default fallback
+  const [range, setRange] = useState<[number, number]>([0, 100000000]);
+  const [minInput, setMinInput] = useState<string>("");
+  const [maxInput, setMaxInput] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  // Sync state from URL on mount/update
+  useEffect(() => {
+    const minParam = searchParams.get("minPrice");
+    const maxParam = searchParams.get("maxPrice");
+
+    if (minParam || maxParam) {
+      const newMin = minParam ? Number(minParam) : 0;
+      // If maxParam is not present, we will set it after fetching maxPrice or default
+      if (minParam) setMinInput(formatCurrency(newMin));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchPriceRange = async () => {
+      try {
+        const res = await productService.getPriceRange();
+        if (res.data) {
+          // Round up to nearest 500k to ensure the slider covers the exact max value nicely
+          const rawMax = res.data.max;
+          const roundedMax = Math.ceil(rawMax / 500000) * 500000;
+
+          setMaxPrice(roundedMax);
+
+          // Determine initial values from URL or default
+          const minParam = searchParams.get("minPrice");
+          const maxParam = searchParams.get("maxPrice");
+
+          const initialMin = minParam ? Number(minParam) : 0;
+          const initialMax = maxParam ? Number(maxParam) : roundedMax;
+
+          setRange([initialMin, initialMax]);
+          setMinInput(formatCurrency(initialMin));
+          setMaxInput(
+            initialMax === roundedMax ? "" : formatCurrency(initialMax)
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch price range", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPriceRange();
+  }, [searchParams]); // Re-run if searchParams change (though mostly just need initial sync)
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("vi-VN").format(val);
+  };
+
+  const handleSliderChange = (val: [number, number]) => {
+    setRange(val);
+    setMinInput(formatCurrency(val[0]));
+    setMaxInput(formatCurrency(val[1]));
+  };
+
+  const handleInputChange = (type: "min" | "max", val: string) => {
+    // allow typing numbers and dots
+    const raw = val.replace(/\./g, "").replace(/\D/g, "");
+    const num = Number(raw);
+
+    if (type === "min") {
+      setMinInput(raw ? formatCurrency(num) : "0");
+    } else {
+      setMaxInput(raw ? formatCurrency(num) : "");
+    }
+  };
+
+  const applyPrice = () => {
+    // Logic to update filter params in parent/url
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+
+    // Only set if different from default/bounds to keep URL clean?
+    // Or always set to be explicit. Let's always set for now.
+
+    // Min Price
+    if (range[0] > 0) {
+      current.set("minPrice", range[0].toString());
+    } else {
+      current.delete("minPrice");
+    }
+
+    // Max Price
+    if (range[1] < maxPrice) {
+      current.set("maxPrice", range[1].toString());
+    } else {
+      current.delete("maxPrice");
+    }
+
+    // Reset pagination to 1 when filtering
+    current.set("page", "1");
+
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+
+    router.push(`${pathname}${query}`);
+  };
+
+  return (
+    <div className="px-1 py-1">
+      <div className="mb-4 px-2">
+        {/* Only render slider when data is loaded to avoid jumping or wrong scale */}
+        {!loading && (
+          <DualRangeSlider
+            min={0}
+            max={maxPrice}
+            step={100000}
+            value={range}
+            onChange={handleSliderChange}
+          />
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        <div className="relative w-full">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+            ₫
+          </span>
+          <input
+            type="text"
+            value={minInput}
+            onChange={(e) => handleInputChange("min", e.target.value)}
+            onBlur={() => {
+              // Validate on blur
+              const val = minInput.replace(/\./g, "");
+              let num = val ? parseInt(val) : 0;
+              if (num > range[1]) num = range[1];
+              setRange([num, range[1]]);
+              setMinInput(formatCurrency(num));
+            }}
+            placeholder="Từ"
+            className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-300 rounded hover:border-[#103E8F] focus:border-[#103E8F] focus:outline-none focus:ring-1 focus:ring-[#103E8F] transition-all"
+          />
+        </div>
+        <span className="text-gray-400">-</span>
+        <div className="relative w-full">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+            ₫
+          </span>
+          <input
+            type="text"
+            value={maxInput}
+            onChange={(e) => handleInputChange("max", e.target.value)}
+            onBlur={() => {
+              const val = maxInput.replace(/\./g, "");
+              let num = val ? parseInt(val) : maxPrice;
+              if (num < range[0]) num = range[0];
+              if (num > maxPrice) num = maxPrice; // Cap at dynamic max
+              setRange([range[0], num]);
+              setMaxInput(num === maxPrice ? "" : formatCurrency(num));
+            }}
+            placeholder="Đến"
+            className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-300 rounded hover:border-[#103E8F] focus:border-[#103E8F] focus:outline-none focus:ring-1 focus:ring-[#103E8F] transition-all"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={applyPrice}
+        className="w-full py-2 bg-gray-100 text-gray-700 text-xs font-bold uppercase rounded hover:bg-[#E31837] hover:text-white transition-all shadow-sm"
+      >
+        Áp dụng
+      </button>
+    </div>
+  );
+};

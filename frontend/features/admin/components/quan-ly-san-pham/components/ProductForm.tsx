@@ -787,6 +787,25 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                   </span>
                 </div>
               </label>
+
+              <label className="flex items-center p-4 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-all hover:border-blue-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isNewArrival || false}
+                  onChange={(e) =>
+                    updateField("isNewArrival", e.target.checked)
+                  }
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">
+                    Hàng mới về (New Arrival)
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Hiển thị badge NEW ARRIVAL
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
         </div>

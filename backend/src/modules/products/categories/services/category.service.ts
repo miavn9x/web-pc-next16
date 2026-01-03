@@ -84,6 +84,7 @@ export class CategoryService {
       code,
       name: dto.name,
       slug,
+      icon: dto.icon || null,
       priceRanges: dto.priceRanges || [],
       isActive: dto.isActive !== undefined ? dto.isActive : true,
       children: [],

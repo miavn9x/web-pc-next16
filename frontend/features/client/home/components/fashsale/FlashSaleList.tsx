@@ -271,11 +271,21 @@ export default function FlashSaleList() {
 
       {/* Responsive Grid Layout */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 lg:gap-y-6 lg:gap-x-4">
-        {currentProducts.map((product) => (
-          <div key={product.productCode} className="w-full">
-            <FlashSaleProductCard {...product} />
-          </div>
-        ))}
+        {currentProducts.map((product) => {
+          const slug = product.name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s-]/g, "")
+            .trim()
+            .replace(/\s+/g, "-");
+
+          return (
+            <div key={product.productCode} className="w-full">
+              <FlashSaleProductCard {...product} slug={slug} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

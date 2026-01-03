@@ -115,6 +115,16 @@ export class AdminProductController {
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  @Get('price-range')
+  async getPriceRange() {
+    const range = await this.productService.getPriceRange();
+    return {
+      message: 'Price range retrieved successfully',
+      data: range,
+      errorCode: null,
+    };
+  }
+
   @Get()
   async findAll(@Query() filter: FilterProductDto) {
     // Public API - filter only active products AND exclude Build PC specific products

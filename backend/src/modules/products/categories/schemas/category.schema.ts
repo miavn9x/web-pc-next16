@@ -45,6 +45,9 @@ export class Category {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ type: String, default: null })
+  icon: string | null;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

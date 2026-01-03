@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useCategoryForm } from "../hooks/useCategoryForm";
 import type { CategoryFormProps } from "../types";
+import IconSelector from "./IconSelector";
 
 const CategoryForm = ({ initialData, onSuccess }: CategoryFormProps) => {
   const {
@@ -68,14 +69,12 @@ const CategoryForm = ({ initialData, onSuccess }: CategoryFormProps) => {
           Điền thông tin bên dưới. Các trường có dấu{" "}
           <span className="text-red-500">*</span> là bắt buộc.
         </p>
-
-
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Basic Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3 rounded-t-xl">
             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
               1
             </div>
@@ -118,6 +117,11 @@ const CategoryForm = ({ initialData, onSuccess }: CategoryFormProps) => {
                 </p>
               )}
             </div>
+
+            <IconSelector
+              value={formData.icon}
+              onChange={(val) => updateField("icon", val)}
+            />
 
             {/* IsActive */}
             <div className="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">

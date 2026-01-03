@@ -75,11 +75,10 @@ export class AuthThrottlerService {
 
     // Tìm active lock từ database
     const activeLock = await this.accountLockModel.findOne({
-      email: safeEmail,
-      ipAddress: ip,
       lockReason: reason,
       isUnlocked: false,
       lockUntil: { $gt: new Date() },
+      $or: [{ email: safeEmail }, { ipAddress: ip }],
     });
 
     if (activeLock) {

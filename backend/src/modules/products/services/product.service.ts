@@ -153,8 +153,58 @@ export class ProductService {
     const query: any = {};
 
     // Category filter
-    if (filter.categoryCode) {
-      query.categoryCode = filter.categoryCode;
+    if (filter.categorySlug || filter.categoryCode) {
+      console.log('[DEBUG] Category filter:', {
+        categorySlug: filter.categorySlug,
+        categoryCode: filter.categoryCode,
+      });
+
+      // 1. Fetch all categories structure
+      const allCategories = await this.categoryModel.find().lean().exec();
+      console.log('[DEBUG] Fetched categories count:', allCategories.length);
+
+      // 2. Helper to find node by slug OR code
+      const findNode = (nodes: any[], targetSlug?: string, targetCode?: string): any => {
+        for (const node of nodes) {
+          if (
+            (targetSlug && node.slug === targetSlug) ||
+            (targetCode && node.code === targetCode)
+          ) {
+            console.log('[DEBUG] Found matching node:', { code: node.code, slug: node.slug });
+            return node;
+          }
+          if (node.children && node.children.length > 0) {
+            const found = findNode(node.children, targetSlug, targetCode);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const targetNode = findNode(allCategories, filter.categorySlug, filter.categoryCode);
+      console.log('[DEBUG] Target node found:', !!targetNode);
+
+      if (targetNode) {
+        // 3. Collect all descendant codes
+        const codes = [targetNode.code];
+
+        const collectCodes = (node: any) => {
+          if (node.children && node.children.length > 0) {
+            node.children.forEach((child: any) => {
+              codes.push(child.code);
+              collectCodes(child);
+            });
+          }
+        };
+        collectCodes(targetNode);
+
+        console.log('[DEBUG] Collected category codes:', codes);
+
+        // 4. Query with $in
+        query.categoryCode = { $in: codes };
+      } else {
+        console.log('[DEBUG] No target node found for slug/code');
+      }
     }
 
     // Text search (Regex for partial match)

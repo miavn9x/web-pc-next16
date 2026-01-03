@@ -64,7 +64,16 @@ export const useCategoryForm = ({
       setSubmitting(true);
 
       if (isEdit && initialData) {
-        const { code, ...updateData } = formData;
+        // Recursive helper to remove slug from entire tree
+        const removeSlugRecursive = (obj: any): any => {
+          const { code, slug, ...rest } = obj;
+          if (rest.children && Array.isArray(rest.children)) {
+            rest.children = rest.children.map(removeSlugRecursive);
+          }
+          return rest;
+        };
+
+        const updateData = removeSlugRecursive(formData);
         await updateCategory(initialData.code, updateData);
         toast.success("Cập nhật danh mục thành công!");
       } else {

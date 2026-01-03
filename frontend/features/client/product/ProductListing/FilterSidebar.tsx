@@ -46,6 +46,11 @@ export default function FilterSidebar() {
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const currentCategorySlug = searchParams.get("category"); // Use 'category' for slug
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -65,6 +70,28 @@ export default function FilterSidebar() {
     setExpandedCategories((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
     );
+  };
+
+  const handleCategoryCheck = (slug: string) => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+
+    // Toggle logic
+    if (current.get("category") === slug) {
+      current.delete("category");
+    } else {
+      current.set("category", slug);
+    }
+
+    // Remove legacy param if exists
+    current.delete("categoryCode");
+
+    // Reset page to 1 (remove param)
+    current.delete("page");
+
+    // Construct query string
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+    router.push(`${pathname}${query}`);
   };
 
   const renderIcon = (iconName?: string) => {
@@ -138,6 +165,12 @@ export default function FilterSidebar() {
                               >
                                 <input
                                   type="checkbox"
+                                  checked={
+                                    currentCategorySlug === subChild.slug
+                                  }
+                                  onChange={() =>
+                                    handleCategoryCheck(subChild.slug)
+                                  }
                                   className="appearance-none w-3 h-3 border border-gray-300 rounded-sm checked:bg-[#103E8F] checked:border-[#103E8F] transition-all"
                                 />
                                 <span className="text-[11px] text-gray-600 group-hover/item:text-[#103E8F] transition-colors">
@@ -155,6 +188,8 @@ export default function FilterSidebar() {
                           <label className="flex items-center gap-2 cursor-pointer group/item select-none pl-2">
                             <input
                               type="checkbox"
+                              checked={currentCategorySlug === child.slug}
+                              onChange={() => handleCategoryCheck(child.slug)}
                               className="appearance-none w-3 h-3 border border-gray-300 rounded-sm checked:bg-[#103E8F] checked:border-[#103E8F] transition-all"
                             />
                             <span className="text-[11px] text-gray-600 group-hover/item:text-[#103E8F] transition-colors">
@@ -225,9 +260,7 @@ const PriceFilter = () => {
 
           setRange([initialMin, initialMax]);
           setMinInput(formatCurrency(initialMin));
-          setMaxInput(
-            initialMax === roundedMax ? "" : formatCurrency(initialMax)
-          );
+          setMaxInput(formatCurrency(initialMax));
         }
       } catch (error) {
         console.error("Failed to fetch price range", error);
@@ -341,7 +374,7 @@ const PriceFilter = () => {
               if (num < range[0]) num = range[0];
               if (num > maxPrice) num = maxPrice; // Cap at dynamic max
               setRange([range[0], num]);
-              setMaxInput(num === maxPrice ? "" : formatCurrency(num));
+              setMaxInput(formatCurrency(num));
             }}
             placeholder="Đến"
             className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-300 rounded hover:border-[#103E8F] focus:border-[#103E8F] focus:outline-none focus:ring-1 focus:ring-[#103E8F] transition-all"

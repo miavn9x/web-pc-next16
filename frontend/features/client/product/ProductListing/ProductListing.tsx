@@ -34,7 +34,8 @@ export default function ProductListing() {
         ? Number(searchParams.get("maxPrice"))
         : undefined;
       const sortBy = searchParams.get("sortBy") || undefined;
-      // Add more params as needed
+      const categoryCode = searchParams.get("categoryCode") || undefined;
+      const categorySlug = searchParams.get("category") || undefined;
 
       const res = await productService.getProducts({
         page,
@@ -42,6 +43,8 @@ export default function ProductListing() {
         minPrice,
         maxPrice,
         sortBy,
+        categoryCode,
+        categorySlug,
       });
       setProducts(res.data);
       setMeta(res.meta);
@@ -136,8 +139,14 @@ export default function ProductListing() {
                     const current = new URLSearchParams(
                       Array.from(searchParams.entries())
                     );
-                    current.set("page", (meta.page - 1).toString());
-                    router.push(`${pathname}?${current.toString()}`);
+                    const targetPage = meta.page - 1;
+                    if (targetPage <= 1) {
+                      current.delete("page");
+                    } else {
+                      current.set("page", targetPage.toString());
+                    }
+                    const search = current.toString();
+                    router.push(`${pathname}${search ? `?${search}` : ""}`);
                   }}
                   disabled={meta.page === 1}
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -152,8 +161,14 @@ export default function ProductListing() {
                       const current = new URLSearchParams(
                         Array.from(searchParams.entries())
                       );
-                      current.set("page", (i + 1).toString());
-                      router.push(`${pathname}?${current.toString()}`);
+                      const targetPage = i + 1;
+                      if (targetPage === 1) {
+                        current.delete("page");
+                      } else {
+                        current.set("page", targetPage.toString());
+                      }
+                      const search = current.toString();
+                      router.push(`${pathname}${search ? `?${search}` : ""}`);
                     }}
                     className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all font-medium ${
                       meta.page === i + 1
@@ -171,7 +186,8 @@ export default function ProductListing() {
                       Array.from(searchParams.entries())
                     );
                     current.set("page", (meta.page + 1).toString());
-                    router.push(`${pathname}?${current.toString()}`);
+                    const search = current.toString();
+                    router.push(`${pathname}${search ? `?${search}` : ""}`);
                   }}
                   disabled={meta.page === meta.totalPages}
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"

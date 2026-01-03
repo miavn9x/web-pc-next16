@@ -6,6 +6,7 @@ export interface GetProductsParams {
   limit?: number;
   search?: string;
   categoryCode?: string;
+  categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
   brand?: string;

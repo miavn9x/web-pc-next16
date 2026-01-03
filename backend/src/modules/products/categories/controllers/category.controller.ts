@@ -36,6 +36,11 @@ export class CategoryController {
     return this.categoryService.findOne(code);
   }
 
+  @Get('find-by-slug/:slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.categoryService.findBySlug(slug);
+  }
+
   /**
    * Lấy cây con từ một danh mục cụ thể theo code
    */

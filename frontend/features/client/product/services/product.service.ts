@@ -6,7 +6,6 @@ export interface GetProductsParams {
   limit?: number;
   search?: string;
   categoryCode?: string;
-  categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
   brand?: string;
@@ -58,6 +57,14 @@ export const productService = {
   // Get price range (min/max) from active products
   getPriceRange: async (): Promise<{ data: { min: number; max: number } }> => {
     const response = await axiosInstance.get("/products/price-range");
+    return response.data;
+  },
+
+  // Get category by slug
+  getCategoryBySlug: async (slug: string): Promise<any> => {
+    const response = await axiosInstance.get(
+      `/products/categories/find-by-slug/${slug}`
+    );
     return response.data;
   },
 };

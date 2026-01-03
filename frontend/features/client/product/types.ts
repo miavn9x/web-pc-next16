@@ -36,4 +36,8 @@ export interface ProductData {
   }[];
   description: string;
   isNewArrival?: boolean;
+  isFeatured?: boolean;
+  isBuildPc?: boolean;
+  viewCount?: number;
+  soldCount?: number;
 }

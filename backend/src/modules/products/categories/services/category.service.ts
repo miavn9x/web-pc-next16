@@ -6,11 +6,16 @@ import { CreateCategoryDto } from '../dtos/create-category.dto';
 import { UpdateCategoryDto } from '../dtos/update-category.dto';
 import { generateHierarchicalCode, generateSlugFromName } from '../../utils/string.util';
 
+import { Product, ProductDocument } from '../../schemas/product.schema';
+
 @Injectable()
 export class CategoryService {
   private readonly logger = new Logger(CategoryService.name);
 
-  constructor(@InjectModel(Category.name) private categoryModel: Model<CategoryDocument>) {
+  constructor(
+    @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+  ) {
     // User explicitly requested to manage data manually.
     // No default seed data is created here.
   }
@@ -244,11 +249,67 @@ export class CategoryService {
   }
 
   /**
+   * Tìm danh mục theo Slug (hỗ trợ nested depth 3)
+   */
+  async findBySlug(slug: string) {
+    // 1. Tìm ở Root
+    let category = (await this.categoryModel.findOne({ slug }).lean()) as Category;
+
+    if (category) {
+      return {
+        message: 'Tìm thấy danh mục',
+        data: category,
+        errorCode: null,
+      };
+    }
+
+    // 2. Tìm ở Level 1 (Children)
+    category = (await this.categoryModel.findOne({ 'children.slug': slug }).lean()) as Category;
+    if (category && category.children) {
+      // Extract the specific child
+      const child = category.children.find((c: Category) => c.slug === slug);
+      if (child) {
+        return {
+          message: 'Tìm thấy danh mục',
+          data: child,
+          errorCode: null,
+        };
+      }
+    }
+
+    // 3. Tìm ở Level 2 (Grandchildren)
+    category = (await this.categoryModel
+      .findOne({ 'children.children.slug': slug })
+      .lean()) as Category;
+    if (category && category.children) {
+      // Extract the specific grandchild
+      for (const child of category.children) {
+        if (child.children) {
+          const grandchild = child.children.find((gc: Category) => gc.slug === slug);
+          if (grandchild) {
+            return {
+              message: 'Tìm thấy danh mục',
+              data: grandchild,
+              errorCode: null,
+            };
+          }
+        }
+      }
+    }
+
+    return {
+      message: 'Không tìm thấy danh mục với slug này',
+      data: null,
+      errorCode: 'CATEGORY_NOT_FOUND',
+    };
+  }
+
+  /**
    * L ấy tất cả descendants (children đệ quy) của một category
    * Vì children embedded, chỉ cần traverse nested structure
    */
   async getDescendants(code: string) {
-    const category = await this.categoryModel.findOne({ code }).lean();
+    const category = (await this.categoryModel.findOne({ code }).lean()) as Category;
 
     if (!category) {
       return {
@@ -259,13 +320,11 @@ export class CategoryService {
     }
 
     // Đệ quy lấy tất cả descendants từ children embedded
-    const allDescendants: any[] = [];
+    const allDescendants: Category[] = [];
 
-    const collectDescendants = (cat: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const collectDescendants = (cat: Category) => {
       if (cat.children && cat.children.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        cat.children.forEach((child: any) => {
+        cat.children.forEach((child: Category) => {
           allDescendants.push(child);
           collectDescendants(child);
         });
@@ -292,17 +351,13 @@ export class CategoryService {
     const ancestors: any[] = [];
 
     // Tìm category và track path
-    const findInTree = (cats: any[], targetCode: string, path: any[]): boolean => {
+    const findInTree = (cats: Category[], targetCode: string, path: Category[]): boolean => {
       for (const cat of cats) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (cat.code === targetCode) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           ancestors.push(...path);
           return true;
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (cat.children && cat.children.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment
           if (findInTree(cat.children, targetCode, [...path, cat])) {
             return true;
           }
@@ -321,6 +376,85 @@ export class CategoryService {
   }
 
   /**
+   * Helper: Đệ quy cập nhật slug cho children nếu name thay đổi
+   * So sánh DTO incoming với Existing data
+   */
+  private updateChildrenSlugsRecursive(
+    dtoChildren: CreateCategoryDto[],
+    existingChildren: Category[],
+  ) {
+    if (!dtoChildren || !existingChildren) return;
+
+    for (const childDto of dtoChildren) {
+      // Tìm child tương ứng trong existing data
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const existingChild: Category = existingChildren.find(
+        (c: Category) => c.code === childDto.code,
+      ) as any;
+
+      if (existingChild) {
+        // Nếu name thay đổi, regenerate slug
+        if (childDto.name && childDto.name !== existingChild.name) {
+          childDto.slug = generateSlugFromName(childDto.name);
+        }
+
+        // Đệ quy cho con của child này
+        if (childDto.children && childDto.children.length > 0) {
+          this.updateChildrenSlugsRecursive(childDto.children, existingChild.children);
+        }
+      }
+    }
+  }
+
+  /**
+   * Helper: Recursive function to sync product slugs
+   */
+  private async syncProductsFromCategory(category: Category, parentLevel: number | null = null) {
+    let currentLevel = 0;
+
+    // Determine level if not provided (i.e. Root call)
+    if (parentLevel === null) {
+      if (!category.parentId) {
+        currentLevel = 0; // Root
+      } else {
+        // Fetch parent to check if it's Root
+        const parent = (await this.categoryModel.findById(category.parentId).lean()) as Category;
+        if (parent && !parent.parentId) {
+          currentLevel = 1; // Subcategory
+        } else {
+          currentLevel = 2; // Deeper
+        }
+      }
+    } else {
+      currentLevel = parentLevel + 1;
+    }
+
+    const { code, slug, name } = category;
+
+    // Execute Update based on Level
+    if (currentLevel === 0) {
+      // Root: Update categorySlug
+      await this.productModel.updateMany(
+        { categoryCode: { $regex: `^${code}` } },
+        { $set: { categorySlug: slug } },
+      );
+    } else if (currentLevel === 1) {
+      // Level 1: Update subcategorySlug & subcategory name
+      await this.productModel.updateMany(
+        { categoryCode: { $regex: code } },
+        { $set: { subcategorySlug: slug, subcategory: name } },
+      );
+    }
+
+    // Recursively update children
+    if (category.children && category.children.length > 0) {
+      for (const child of category.children) {
+        await this.syncProductsFromCategory(child, currentLevel);
+      }
+    }
+  }
+
+  /**
    * Cập nhật danh mục theo code
    *
    * @param code - Mã danh mục cần cập nhật
@@ -333,43 +467,9 @@ export class CategoryService {
    * ```
    */
   async update(code: string, dto: UpdateCategoryDto) {
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-    // 1. Find root document containing this category (at any nesting level)
-    const allRoots = await this.categoryModel.find().lean();
-
-    let targetRoot: any = null;
-    let targetNode: any = null;
-
-    // Helper to find node in tree
-    const findNodeInTree = (nodes: any[]): any => {
-      for (const node of nodes) {
-        if (node.code === code) {
-          return node;
-        }
-        if (node.children && node.children.length > 0) {
-          const found = findNodeInTree(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    // Find which root contains this code
-    for (const root of allRoots) {
-      if (root.code === code) {
-        targetRoot = root;
-        targetNode = root;
-        break;
-      }
-      const found = findNodeInTree(root.children || []);
-      if (found) {
-        targetRoot = root;
-        targetNode = found;
-        break;
-      }
-    }
-
-    if (!targetRoot || !targetNode) {
+    // Kiểm tra danh mục tồn tại
+    const existing = (await this.categoryModel.findOne({ code }).lean()) as Category;
+    if (!existing) {
       return {
         message: 'Không tìm thấy danh mục để cập nhật',
         data: null,
@@ -377,25 +477,20 @@ export class CategoryService {
       };
     }
 
-    // 2. Auto-generate slug from name if name changed and no custom slug provided
-    if (dto.name && dto.name !== targetNode.name && !dto.slug) {
+    // AUTO-GENERATE SLUG IF NAME CHANGED (ROOT)
+    // Logic: Nếu name thay đổi so với DB, thì regenerate slug luôn
+    if (dto.name && dto.name !== existing.name) {
       dto.slug = generateSlugFromName(dto.name);
     }
 
-    // 3. Validate code uniqueness (if changing code)
-    if (dto.code && dto.code !== targetNode.code) {
-      // Check if new code exists anywhere in all trees
-      const codeExists = allRoots.some(root => {
-        const checkCode = (node: any): boolean => {
-          if (node.code === dto.code) return true;
-          if (node.children && node.children.length > 0) {
-            return node.children.some(checkCode);
-          }
-          return false;
-        };
-        return checkCode(root);
-      });
+    // RECURSIVE CHECK FOR CHILDREN (Add this block)
+    if (dto.children && dto.children.length > 0 && existing.children) {
+      this.updateChildrenSlugsRecursive(dto.children, existing.children);
+    }
 
+    // Nếu update code, kiểm tra trùng lặp
+    if (dto.code && dto.code !== existing.code) {
+      const codeExists = await this.categoryModel.exists({ code: dto.code });
       if (codeExists) {
         return {
           message: 'Code mới đã tồn tại',
@@ -405,20 +500,9 @@ export class CategoryService {
       }
     }
 
-    // 4. Validate slug uniqueness (if changing slug)
-    if (dto.slug && dto.slug !== targetNode.slug) {
-      // Check if new slug exists anywhere in all trees
-      const slugExists = allRoots.some(root => {
-        const checkSlug = (node: any): boolean => {
-          if (node.slug === dto.slug) return true;
-          if (node.children && node.children.length > 0) {
-            return node.children.some(checkSlug);
-          }
-          return false;
-        };
-        return checkSlug(root);
-      });
-
+    // Nếu update slug, kiểm tra trùng lặp
+    if (dto.slug && dto.slug !== existing.slug) {
+      const slugExists = await this.categoryModel.exists({ slug: dto.slug });
       if (slugExists) {
         return {
           message: 'Slug mới đã tồn tại',
@@ -428,39 +512,26 @@ export class CategoryService {
       }
     }
 
-    // 5. Apply updates to target node (in-memory)
-    Object.assign(targetNode, dto);
-
-    // 6. Recursively regenerate slugs for nodes missing them
-    const ensureSlugs = (node: any) => {
-      if (!node.slug && node.name) {
-        node.slug = generateSlugFromName(node.name);
-      }
-      if (node.children && node.children.length > 0) {
-        node.children.forEach(ensureSlugs);
-      }
-    };
-    ensureSlugs(targetNode);
-
-    // 7. Save the root document (which contains the updated nested structure)
-    const updated = await this.categoryModel
-      .findOneAndUpdate({ _id: targetRoot._id }, targetRoot, { new: true })
-      .lean();
+    const updated = (await this.categoryModel
+      .findOneAndUpdate({ code }, dto, { new: true })
+      .lean()) as Category;
 
     if (!updated) {
       return {
-        message: 'Lỗi khi lưu cập nhật',
+        message: 'Không tìm thấy danh mục để cập nhật',
         data: null,
-        errorCode: 'UPDATE_ERROR',
+        errorCode: 'CATEGORY_NOT_FOUND',
       };
     }
+
+    // Sync product slugs (categorySlug, subcategorySlug)
+    await this.syncProductsFromCategory(updated);
 
     return {
       message: 'Cập nhật danh mục thành công',
       data: updated,
       errorCode: null,
     };
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
   }
 
   /**

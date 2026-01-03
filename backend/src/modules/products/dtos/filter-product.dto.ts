@@ -13,10 +13,6 @@ export class FilterProductDto {
 
   @IsString()
   @IsOptional()
-  categorySlug?: string;
-
-  @IsString()
-  @IsOptional()
   search?: string;
 
   @IsNumber()

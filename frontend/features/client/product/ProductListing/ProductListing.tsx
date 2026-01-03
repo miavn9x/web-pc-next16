@@ -7,12 +7,19 @@ import FilterSidebar from "./FilterSidebar";
 import ProductCard from "../components/ProductCard";
 import { productService } from "../services/product.service";
 import { ProductData } from "../types";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
-export default function ProductListing() {
+interface ProductListingProps {
+  initialCategoryCode?: string;
+}
+
+export default function ProductListing({
+  initialCategoryCode,
+}: ProductListingProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const categoryCode = initialCategoryCode || searchParams.get("category");
+
   const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({
@@ -22,29 +29,14 @@ export default function ProductListing() {
     total: 0,
   });
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = 1) => {
     try {
       setLoading(true);
-
-      const page = Number(searchParams.get("page")) || 1;
-      const minPrice = searchParams.get("minPrice")
-        ? Number(searchParams.get("minPrice"))
-        : undefined;
-      const maxPrice = searchParams.get("maxPrice")
-        ? Number(searchParams.get("maxPrice"))
-        : undefined;
-      const sortBy = searchParams.get("sortBy") || undefined;
-      const categoryCode = searchParams.get("categoryCode") || undefined;
-      const categorySlug = searchParams.get("category") || undefined;
-
       const res = await productService.getProducts({
         page,
         limit: 20,
-        minPrice,
-        maxPrice,
-        sortBy,
-        categoryCode,
-        categorySlug,
+        categoryCode: categoryCode || undefined,
+        // Add other filters here later
       });
       setProducts(res.data);
       setMeta(res.meta);
@@ -57,7 +49,7 @@ export default function ProductListing() {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchParams]); // Run when URL params change
+  }, [categoryCode]); // Re-fetch when category changes
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col py-2">
@@ -135,19 +127,7 @@ export default function ProductListing() {
             {meta.totalPages > 1 && (
               <div className="mt-auto pt-8 flex justify-center items-center gap-2">
                 <button
-                  onClick={() => {
-                    const current = new URLSearchParams(
-                      Array.from(searchParams.entries())
-                    );
-                    const targetPage = meta.page - 1;
-                    if (targetPage <= 1) {
-                      current.delete("page");
-                    } else {
-                      current.set("page", targetPage.toString());
-                    }
-                    const search = current.toString();
-                    router.push(`${pathname}${search ? `?${search}` : ""}`);
-                  }}
+                  onClick={() => fetchProducts(meta.page - 1)}
                   disabled={meta.page === 1}
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -157,19 +137,7 @@ export default function ProductListing() {
                 {[...Array(meta.totalPages)].map((_, i) => (
                   <button
                     key={i + 1}
-                    onClick={() => {
-                      const current = new URLSearchParams(
-                        Array.from(searchParams.entries())
-                      );
-                      const targetPage = i + 1;
-                      if (targetPage === 1) {
-                        current.delete("page");
-                      } else {
-                        current.set("page", targetPage.toString());
-                      }
-                      const search = current.toString();
-                      router.push(`${pathname}${search ? `?${search}` : ""}`);
-                    }}
+                    onClick={() => fetchProducts(i + 1)}
                     className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all font-medium ${
                       meta.page === i + 1
                         ? "bg-red-600 text-white border-red-600 shadow-sm"
@@ -181,14 +149,7 @@ export default function ProductListing() {
                 ))}
 
                 <button
-                  onClick={() => {
-                    const current = new URLSearchParams(
-                      Array.from(searchParams.entries())
-                    );
-                    current.set("page", (meta.page + 1).toString());
-                    const search = current.toString();
-                    router.push(`${pathname}${search ? `?${search}` : ""}`);
-                  }}
+                  onClick={() => fetchProducts(meta.page + 1)}
                   disabled={meta.page === meta.totalPages}
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >

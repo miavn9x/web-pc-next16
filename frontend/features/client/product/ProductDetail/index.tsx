@@ -49,19 +49,29 @@ function Breadcrumb({
 // Need Link import for breadcrumb
 import Link from "next/link";
 
-export default function ProductDetail() {
+interface ProductDetailProps {
+  initialProduct?: ProductData | null;
+}
+
+export default function ProductDetail({ initialProduct }: ProductDetailProps) {
   const params = useParams();
-  const [product, setProduct] = useState<ProductData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState<ProductData | null>(
+    initialProduct || null
+  );
+  const [loading, setLoading] = useState(!initialProduct);
 
   useEffect(() => {
     const fetchProduct = async () => {
+      if (initialProduct) return;
       if (!params?.slug) return;
       try {
         setLoading(true);
-        const res = await productService.getProductBySlug(
-          params.slug as string
-        );
+        // Handle if slug is array (from [...slug]) or string
+        const slugParam = Array.isArray(params.slug)
+          ? params.slug[params.slug.length - 1]
+          : (params.slug as string);
+
+        const res = await productService.getProductBySlug(slugParam);
         setProduct(res.data);
       } catch (error) {
         console.error("Failed to fetch product detail", error);

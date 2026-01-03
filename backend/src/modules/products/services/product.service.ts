@@ -153,58 +153,9 @@ export class ProductService {
     const query: any = {};
 
     // Category filter
-    if (filter.categorySlug || filter.categoryCode) {
-      console.log('[DEBUG] Category filter:', {
-        categorySlug: filter.categorySlug,
-        categoryCode: filter.categoryCode,
-      });
-
-      // 1. Fetch all categories structure
-      const allCategories = await this.categoryModel.find().lean().exec();
-      console.log('[DEBUG] Fetched categories count:', allCategories.length);
-
-      // 2. Helper to find node by slug OR code
-      const findNode = (nodes: any[], targetSlug?: string, targetCode?: string): any => {
-        for (const node of nodes) {
-          if (
-            (targetSlug && node.slug === targetSlug) ||
-            (targetCode && node.code === targetCode)
-          ) {
-            console.log('[DEBUG] Found matching node:', { code: node.code, slug: node.slug });
-            return node;
-          }
-          if (node.children && node.children.length > 0) {
-            const found = findNode(node.children, targetSlug, targetCode);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-
-      const targetNode = findNode(allCategories, filter.categorySlug, filter.categoryCode);
-      console.log('[DEBUG] Target node found:', !!targetNode);
-
-      if (targetNode) {
-        // 3. Collect all descendant codes
-        const codes = [targetNode.code];
-
-        const collectCodes = (node: any) => {
-          if (node.children && node.children.length > 0) {
-            node.children.forEach((child: any) => {
-              codes.push(child.code);
-              collectCodes(child);
-            });
-          }
-        };
-        collectCodes(targetNode);
-
-        console.log('[DEBUG] Collected category codes:', codes);
-
-        // 4. Query with $in
-        query.categoryCode = { $in: codes };
-      } else {
-        console.log('[DEBUG] No target node found for slug/code');
-      }
+    if (filter.categoryCode) {
+      // Use regex to match hierarchical codes (e.g. searching "PARENT" finds "PARENT-CHILD")
+      query.categoryCode = { $regex: `^${filter.categoryCode}` };
     }
 
     // Text search (Regex for partial match)
@@ -324,6 +275,32 @@ export class ProductService {
         ...product.toObject(),
         ...dto,
       });
+    }
+
+    // If category changed, re-fetch category info to update denormalized fields
+    if (dto.categoryCode && dto.categoryCode !== product.categoryCode) {
+      const allCategories = await this.categoryModel.find().lean().exec();
+      const categoryPath = this.findCategoryPath(allCategories, dto.categoryCode);
+
+      if (!categoryPath || categoryPath.length === 0) {
+        throw new NotFoundException(`Category with code "${dto.categoryCode}" not found`);
+      }
+
+      // Root Category (Level 1)
+      const rootCategory = categoryPath[0];
+      (dto as any)['categorySlug'] = rootCategory.slug;
+      (dto as any)['categoryPriceRanges'] = rootCategory.priceRanges || [];
+
+      // Subcategory (Level 2)
+      if (categoryPath.length >= 2) {
+        const subCat = categoryPath[1];
+        (dto as any)['subcategory'] = subCat.name;
+        (dto as any)['subcategorySlug'] = subCat.slug;
+      } else {
+        // If moved to a Root category, clear subcategory fields
+        (dto as any)['subcategory'] = '';
+        (dto as any)['subcategorySlug'] = '';
+      }
     }
 
     Object.assign(product, dto);

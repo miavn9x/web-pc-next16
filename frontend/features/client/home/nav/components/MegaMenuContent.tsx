@@ -41,7 +41,10 @@ const getCategoryIcon = (cat: Category) => {
   return <Monitor size={20} />; // Default
 };
 
+import { useRouter } from "next/navigation";
+
 const MegaMenuContent = () => {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(0);
@@ -91,6 +94,7 @@ const MegaMenuContent = () => {
             <li
               key={cat.code}
               onMouseEnter={() => setActiveCategoryIndex(idx)}
+              onClick={() => router.push(`/product/${cat.slug}`)}
               className={`px-4 py-3 cursor-pointer flex items-center justify-between text-[13px] font-medium transition-all ${
                 activeCategoryIndex === idx
                   ? "bg-white text-[#103E8F] shadow-sm border-l-4 border-[#103E8F]"
@@ -121,7 +125,7 @@ const MegaMenuContent = () => {
           {activeCategory?.children?.map((childL2) => (
             <div key={childL2.code}>
               <Link
-                href={`/products?category=${childL2.code}`}
+                href={`/product/${childL2.slug}`}
                 className="block text-[#103E8F] font-bold text-sm uppercase mb-3 border-b border-gray-100 pb-2 hover:underline"
               >
                 {childL2.name}
@@ -132,7 +136,7 @@ const MegaMenuContent = () => {
                 {childL2.children?.map((childL3) => (
                   <li key={childL3.code} className="group">
                     <Link
-                      href={`/products?category=${childL3.code}`}
+                      href={`/product/${childL3.slug}`}
                       className="text-sm text-gray-700 hover:text-[#103E8F] hover:translate-x-1 transition-all flex items-center gap-2"
                     >
                       <span className="w-1 h-1 rounded-full bg-gray-300 group-hover:bg-[#103E8F] transition-colors"></span>
@@ -155,11 +159,9 @@ const MegaMenuContent = () => {
                   {activeCategory.priceRanges.map((range, idx) => (
                     <li key={idx} className="group">
                       <Link
-                        href={`/products?category=${
-                          activeCategory.code
-                        }&minPrice=${range.min}${
-                          range.max ? `&maxPrice=${range.max}` : ""
-                        }`}
+                        href={`/product/${activeCategory.slug}?minPrice=${
+                          range.min
+                        }${range.max ? `&maxPrice=${range.max}` : ""}`}
                         className="text-sm text-gray-700 hover:text-[#103E8F] hover:translate-x-1 transition-all flex items-center gap-2"
                       >
                         <span className="w-1 h-1 rounded-full bg-gray-300 group-hover:bg-[#103E8F] transition-colors"></span>
@@ -179,7 +181,7 @@ const MegaMenuContent = () => {
               <div className="col-span-3 text-center py-10 text-gray-400">
                 <p>Chưa có danh mục con</p>
                 <Link
-                  href={`/products?category=${activeCategory?.code}`}
+                  href={`/product/${activeCategory?.slug}`}
                   className="text-blue-600 hover:underline mt-2 inline-block"
                 >
                   Xem tất cả sản phẩm

@@ -12,7 +12,13 @@ export default function ProductLayout({
         <div className="flex flex-col lg:flex-row gap-2 flex-1">
           {/* Persistent Sidebar (Left Column) */}
           <aside className="w-full lg:w-[20%] shrink-0">
-            <FilterSidebar />
+            <React.Suspense
+              fallback={
+                <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+              }
+            >
+              <FilterSidebar />
+            </React.Suspense>
           </aside>
 
           {/* Main Content (Right Column: Listing or Detail) */}

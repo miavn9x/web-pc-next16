@@ -113,9 +113,11 @@ export default function HotDeals() {
 
           {/* Button */}
           <div className="flex justify-center mt-8">
-            <button className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-full hover:bg-yellow-500 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-              Xem thêm
-            </button>
+            <Link href="/product?isFeatured=true">
+              <button className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-full hover:bg-yellow-500 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer">
+                Xem thêm
+              </button>
+            </Link>
           </div>
         </div>
       </div>

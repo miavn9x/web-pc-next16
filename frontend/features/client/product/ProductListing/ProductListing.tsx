@@ -54,12 +54,15 @@ export default function ProductListing({
     try {
       setLoading(true);
       const { sortBy, sortOrder } = getSortParams(sortValue);
+      const isFeatured = searchParams.get("isFeatured") === "true";
+
       const res = await productService.getProducts({
         page,
         limit: 20,
         categoryCode: categoryCode || undefined,
         sortBy,
         sortOrder,
+        isFeatured: isFeatured || undefined,
       });
       setProducts(res.data);
       setMeta(res.meta);
@@ -72,7 +75,7 @@ export default function ProductListing({
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryCode, sortValue]); // Re-fetch when category or sort changes
+  }, [categoryCode, sortValue, searchParams]); // Re-fetch when category, sort, or params change
 
   // Ensure sidebar is visible when listing is mounted
   const { setVisible } = useSidebar();

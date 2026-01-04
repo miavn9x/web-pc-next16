@@ -4,6 +4,7 @@ import { Trash2, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { getProductImageUrl } from "@/shared/utlis/image.utils";
 
 interface CartItemProps {
   item: {
@@ -49,7 +50,7 @@ export default function CartItem({
         />
         <div className="relative w-20 h-20 md:w-24 md:h-24 shrink-0 border border-gray-200 rounded-md overflow-hidden bg-white">
           <Image
-            src={item.image}
+            src={getProductImageUrl(item.image)}
             alt={item.name}
             fill
             className="object-contain p-1"

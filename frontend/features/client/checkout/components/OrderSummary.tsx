@@ -3,6 +3,7 @@
 import { useCart } from "@/features/client/cart/context/CartContext";
 import { ShoppingBag, ShieldCheck, Truck, RotateCcw } from "lucide-react";
 import Image from "next/image";
+import { getProductImageUrl } from "@/shared/utlis/image.utils";
 
 export default function CheckoutOrderSummary() {
   const { cartItems, totalPrice } = useCart();
@@ -21,7 +22,7 @@ export default function CheckoutOrderSummary() {
             <div key={item.id} className="flex gap-3">
               <div className="relative w-16 h-16 border rounded bg-gray-50 shrink-0">
                 <Image
-                  src={item.image}
+                  src={getProductImageUrl(item.image)}
                   alt={item.name}
                   fill
                   className="object-contain p-1"

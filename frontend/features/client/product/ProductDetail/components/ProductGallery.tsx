@@ -6,11 +6,17 @@ import { getProductImageUrl } from "@/shared/utlis/image.utils";
 interface ProductGalleryProps {
   images: string[];
   productName: string;
+  price?: number;
+  originalPrice?: number;
+  discount?: number;
 }
 
 export default function ProductGallery({
   images,
   productName,
+  price,
+  originalPrice,
+  discount,
 }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,6 +65,26 @@ export default function ProductGallery({
         className="relative w-full aspect-square bg-white rounded-xl overflow-hidden border border-gray-100 group cursor-zoom-in"
         onClick={handleImageClick}
       >
+        {/* Badges */}
+        <div className="absolute top-0 left-0 z-10 flex flex-col gap-1 pointer-events-none">
+          {((discount && discount > 0) ||
+            (originalPrice && price && originalPrice > price)) && (
+            <>
+              <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
+                Giảm{" "}
+                {discount ||
+                  Math.round(
+                    (((originalPrice || 0) - (price || 0)) /
+                      (originalPrice || 1)) *
+                      100
+                  )}
+                %
+              </div>
+              {/* Decorative localized tag corner */}
+              <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-10"></div>
+            </>
+          )}
+        </div>
         <Image
           src={getProductImageUrl(selectedImage)}
           alt={productName}

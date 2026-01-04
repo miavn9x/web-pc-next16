@@ -55,6 +55,7 @@ export default function ProductListing({
       setLoading(true);
       const { sortBy, sortOrder } = getSortParams(sortValue);
       const isFeatured = searchParams.get("isFeatured") === "true";
+      const search = searchParams.get("search");
 
       const res = await productService.getProducts({
         page,
@@ -63,6 +64,7 @@ export default function ProductListing({
         sortBy,
         sortOrder,
         isFeatured: isFeatured || undefined,
+        search: search || undefined,
       });
       setProducts(res.data);
       setMeta(res.meta);

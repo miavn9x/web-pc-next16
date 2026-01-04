@@ -47,12 +47,16 @@ export default function FlashSaleProductCard({
       />
 
       {/* Discount Tag */}
-      <div className="absolute top-0 left-0 z-40 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg  skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
-        Giảm {discount}%
-      </div>
+      {discount > 0 && (
+        <>
+          <div className="absolute top-0 left-0 z-40 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg  skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
+            Giảm {discount}%
+          </div>
 
-      {/* Decorative localized tag corner */}
-      <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-39"></div>
+          {/* Decorative localized tag corner */}
+          <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-39"></div>
+        </>
+      )}
 
       {/* Image */}
       <div className="relative w-full aspect-square overflow-hidden rounded-t-lg group/image">

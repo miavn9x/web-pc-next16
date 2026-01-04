@@ -63,12 +63,14 @@ export default function ProductCard({
       {/* Badges */}
       <div className="absolute top-0 left-0 z-10 flex flex-col gap-1 pointer-events-none">
         {calculatedDiscount > 0 && (
-          <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
-            Giảm {calculatedDiscount}%
-          </div>
+          <>
+            <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg skew-x-[-10deg] shadow-sm transform -translate-x-1 -translate-y-1">
+              Giảm {calculatedDiscount}%
+            </div>
+            {/* Decorative localized tag corner */}
+            <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-10"></div>
+          </>
         )}
-        {/* Decorative localized tag corner */}
-        <div className="absolute top-0 left-0 w-2 h-2 bg-red-600 translate-y-[15.5px] -translate-x-[4px] rotate-45 z-10"></div>
       </div>
 
       {/* Product Image Area */}

@@ -160,6 +160,9 @@ export default function ProductDetail({
                 ]
               }
               productName={product.name}
+              price={product.price}
+              originalPrice={product.originalPrice}
+              discount={product.discount}
             />
           </div>
 

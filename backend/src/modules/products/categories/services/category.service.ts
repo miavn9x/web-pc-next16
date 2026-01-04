@@ -376,32 +376,51 @@ export class CategoryService {
   }
 
   /**
-   * Helper: Đệ quy cập nhật slug cho children nếu name thay đổi
-   * So sánh DTO incoming với Existing data
+   * Helper: Đệ quy cập nhật slug và khởi tạo dữ liệu cho children
+   * - Nếu child tồn tại: cập nhật slug nếu tên đổi
+   * - Nếu child mới: tạo code, slug và set giá trị mặc định (icon, isActive...)
    */
-  private updateChildrenSlugsRecursive(
+  private syncChildrenRecursive(
     dtoChildren: CreateCategoryDto[],
-    existingChildren: Category[],
+    existingChildren: Category[] | undefined,
+    parentCode: string,
   ) {
-    if (!dtoChildren || !existingChildren) return;
+    if (!dtoChildren) return;
 
     for (const childDto of dtoChildren) {
-      // Tìm child tương ứng trong existing data
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const existingChild: Category = existingChildren.find(
-        (c: Category) => c.code === childDto.code,
-      ) as any;
+      let childCode = childDto.code;
+      const existingChild = existingChildren?.find((c: Category) => c.code === childCode);
 
       if (existingChild) {
-        // Nếu name thay đổi, regenerate slug
+        // Child exists: check name update
         if (childDto.name && childDto.name !== existingChild.name) {
           childDto.slug = generateSlugFromName(childDto.name);
         }
-
-        // Đệ quy cho con của child này
-        if (childDto.children && childDto.children.length > 0) {
-          this.updateChildrenSlugsRecursive(childDto.children, existingChild.children);
+      } else {
+        // New child: generate code & slug
+        if (!childCode) {
+          childCode = generateHierarchicalCode(childDto.name, parentCode);
+          childDto.code = childCode;
         }
+        if (!childDto.slug) {
+          childDto.slug = generateSlugFromName(childDto.name);
+        }
+
+        // --- FIX: Initialize defaults for new child ---
+        // Vì Mongoose 'children' là [Object], nó không tự apply default schema
+        if (childDto.isActive === undefined) childDto.isActive = true;
+        if (childDto.icon === undefined) childDto.icon = null;
+        if (!childDto.priceRanges) childDto.priceRanges = [];
+        if (!childDto.children) childDto.children = [];
+      }
+
+      // Recurse
+      if (childDto.children && childDto.children.length > 0) {
+        this.syncChildrenRecursive(
+          childDto.children,
+          existingChild ? existingChild.children : [], // If new, no existing children
+          childCode as string,
+        );
       }
     }
   }
@@ -484,8 +503,9 @@ export class CategoryService {
     }
 
     // RECURSIVE CHECK FOR CHILDREN (Add this block)
-    if (dto.children && dto.children.length > 0 && existing.children) {
-      this.updateChildrenSlugsRecursive(dto.children, existing.children);
+    if (dto.children && dto.children.length > 0) {
+      // NOTE: We pass existing.code as parentCode for the immediate children
+      this.syncChildrenRecursive(dto.children, existing.children, existing.code);
     }
 
     // Nếu update code, kiểm tra trùng lặp

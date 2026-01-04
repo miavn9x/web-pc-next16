@@ -365,3 +365,87 @@ _(Các mục specs khác như cũ - đã lưu)_
 PG-GIA-RE-vzpguipg-DO-HOA-c4virmpu-GIA-RE-ykly5568
 
           PG-GIA-RE-vzpguipg-DO-HOA-c4virmpu-GIA-RE-ykly5568
+
+          /** 
+* Paste one or more documents here
+*/
+{
+  "code": "PG-GIA-RE-vzpguipg",
+  "name": "pg gia re nhu cho",
+  "slug": "pg-gia-re-nhu-cho",
+  "priceRanges": [
+    {
+      "label": "chui tu",
+      "min": 29,
+      "max": 7656565
+    }
+  ],
+  "children": [
+    {
+      "code": "PG-GIA-RE-vzpguipg-PC-GIA-RE-tnjhow77",
+      "name": "pc giá re nhu ch",
+      "slug": "pc-gia-re-nhu-ch",
+      "icon": null,
+      "priceRanges": [],
+      "isActive": true,
+      "children": [
+        {
+          "code": "PG-GIA-RE-vzpguipg-PC-GIA-RE-tnjhow77-GIA-SIEU-RE-5wvwcyhw",
+          "name": "gia sieu re",
+          "slug": "gia-sieu-re",
+          "icon": null,
+          "priceRanges": [],
+          "isActive": true,
+          "children": []
+        },
+        {
+          "name": "ahii",
+          "priceRanges": [],
+          "children": [],
+          "isActive": true,
+          "code": "PG-GIA-RE-vzpguipg-PC-GIA-RE-tnjhow77-AHII-qe3ro35z",
+          "slug": "ahii",
+          "icon": null
+        }
+      ]
+    },
+    {
+      "code": "PG-GIA-RE-vzpguipg-DO-HOA-c4virmpu",
+      "name": "đô hoa re",
+      "slug": "do-hoa-re",
+      "icon": null,
+      "priceRanges": [],
+      "isActive": true,
+      "children": [
+        {
+          "code": "PG-GIA-RE-vzpguipg-DO-HOA-c4virmpu-GIA-RE-ykly5568",
+          "name": "gia re siêu ha",
+          "slug": "gia-re-sieu-ha",
+          "icon": null,
+          "priceRanges": [],
+          "isActive": true,
+          "children": []
+        },
+        {
+          "name": "bihi",
+          "priceRanges": [],
+          "children": [],
+          "isActive": true,
+          "code": "PG-GIA-RE-vzpguipg-DO-HOA-c4virmpu-BIHI-bvkbsw52",
+          "slug": "bihi",
+          "icon": null
+        }
+      ]
+    }
+  ],
+  "parentId": null,
+  "isActive": true,
+  "icon": "Monitor",
+  "createdAt": {
+    "$date": "2026-01-03T07:58:20.145Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-04T01:38:00.020Z"
+  },
+  "__v": 0
+}

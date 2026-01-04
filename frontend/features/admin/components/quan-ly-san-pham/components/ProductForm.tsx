@@ -268,7 +268,7 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                       : "bg-white border-gray-200 hover:border-blue-400"
                   }`}
                 >
-                  <option value="">-- Danh mục con --</option>
+                  <option value="">-- Danh mục phụ cấp 1 --</option>
                   {getL2Options().map((cat) => (
                     <option key={cat.code} value={cat.code}>
                       {cat.name}
@@ -287,7 +287,7 @@ const ProductForm = ({ initialData, onSuccess }: ProductFormProps) => {
                       : "bg-white border-gray-200 hover:border-blue-400"
                   }`}
                 >
-                  <option value="">-- Danh mục cháu --</option>
+                  <option value="">-- Danh mục phụ câp 2 --</option>
                   {getL3Options().map((cat) => (
                     <option key={cat.code} value={cat.code}>
                       {cat.name}

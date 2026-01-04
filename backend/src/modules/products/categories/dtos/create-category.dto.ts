@@ -66,5 +66,5 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsString()
-  icon?: string;
+  icon?: string | null;
 }

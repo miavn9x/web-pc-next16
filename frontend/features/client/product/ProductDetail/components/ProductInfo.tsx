@@ -86,6 +86,11 @@ export default function ProductInfo({ product }: ProductInfoProps) {
           </h1>
         </div>
 
+        {/* Short Description */}
+        <div className="text-gray-600 text-sm leading-relaxed">
+          {product.description}
+        </div>
+
         {/* Price Section */}
         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
           <p className="text-sm text-gray-500 mb-1">Giá khuyến mãi:</p>

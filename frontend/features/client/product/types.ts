@@ -35,6 +35,7 @@ export interface ProductData {
     mediaCode?: string;
   }[];
   description: string;
+  content: string;
   isNewArrival?: boolean;
   isFeatured?: boolean;
   isBuildPc?: boolean;

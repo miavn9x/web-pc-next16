@@ -8,13 +8,16 @@ import ProductCard from "../components/ProductCard";
 import { productService } from "../services/product.service";
 import { ProductData } from "../types";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSidebar } from "../context/SidebarContext";
 
 interface ProductListingProps {
   initialCategoryCode?: string;
+  currentCategorySlug?: string; // Passed from parent page if known
 }
 
 export default function ProductListing({
   initialCategoryCode,
+  currentCategorySlug,
 }: ProductListingProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,14 +32,34 @@ export default function ProductListing({
     total: 0,
   });
 
+  const [sortValue, setSortValue] = useState("newest");
+
+  const getSortParams = (
+    value: string
+  ): { sortBy: string; sortOrder: "asc" | "desc" } => {
+    switch (value) {
+      case "price_asc":
+        return { sortBy: "price", sortOrder: "asc" };
+      case "price_desc":
+        return { sortBy: "price", sortOrder: "desc" };
+      case "oldest":
+        return { sortBy: "createdAt", sortOrder: "asc" };
+      case "newest":
+      default:
+        return { sortBy: "createdAt", sortOrder: "desc" };
+    }
+  };
+
   const fetchProducts = async (page = 1) => {
     try {
       setLoading(true);
+      const { sortBy, sortOrder } = getSortParams(sortValue);
       const res = await productService.getProducts({
         page,
         limit: 20,
         categoryCode: categoryCode || undefined,
-        // Add other filters here later
+        sortBy,
+        sortOrder,
       });
       setProducts(res.data);
       setMeta(res.meta);
@@ -49,22 +72,32 @@ export default function ProductListing({
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryCode]); // Re-fetch when category changes
+  }, [categoryCode, sortValue]); // Re-fetch when category or sort changes
+
+  // Ensure sidebar is visible when listing is mounted
+  const { setVisible } = useSidebar();
+  useEffect(() => {
+    setVisible(true);
+  }, [setVisible]);
 
   return (
     <div className="flex-1 flex flex-col">
       {/* Sort Bar */}
-      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2 flex flex-col sm:flex-row items-center justify-end gap-4">
         <div className="flex items-center gap-4">
           <span className="text-sm font-bold text-gray-700">Sắp xếp theo:</span>
-          <select className="text-sm border-gray-200 rounded-md py-1.5 focus:ring-red-500 focus:border-red-500">
+          <select
+            value={sortValue}
+            onChange={(e) => setSortValue(e.target.value)}
+            className="text-sm border-gray-200 rounded-md py-1.5 focus:ring-red-500 focus:border-red-500"
+          >
             <option value="price_asc">Giá tăng dần</option>
             <option value="price_desc">Giá giảm dần</option>
             <option value="newest">Mới nhất</option>
-            <option value="bestseller">Bán chạy nhất</option>
+            <option value="oldest">Cũ nhất</option>
           </select>
         </div>
-
+        {/* 
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Xem:</span>
           <button className="p-1.5 bg-blue-50 text-blue-600 rounded">
@@ -73,7 +106,7 @@ export default function ProductListing({
           <button className="p-1.5 text-gray-400 hover:bg-gray-50 rounded">
             <ListIcon size={18} />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Product Grid */}
@@ -99,6 +132,7 @@ export default function ProductListing({
               originalPrice={product.originalPrice}
               discount={product.discount}
               slug={product.slug}
+              categorySlug={product.categorySlug || currentCategorySlug}
               // isNew={product.isNew} // Add backend field later if needed
             />
           ))}

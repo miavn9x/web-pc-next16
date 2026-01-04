@@ -16,6 +16,7 @@ interface ProductCardProps {
   discount?: number; // Optional
   isNew?: boolean; // Label "MỚI"
   isHot?: boolean; // Label "HOT"
+  categorySlug?: string; // Optional category slug for hierarchical routing
 }
 
 export default function ProductCard({
@@ -28,6 +29,7 @@ export default function ProductCard({
   isNew,
   isHot,
   slug,
+  categorySlug,
 }: ProductCardProps) {
   const { addToCart } = useCart();
 
@@ -49,13 +51,14 @@ export default function ProductCard({
       ? Math.round(((originalPrice - price) / originalPrice) * 100)
       : 0);
 
+  // Construct href: /product/category-slug/product-slug or fallback to /product/product-slug
+  const href = categorySlug
+    ? `/product/${categorySlug}/${slug}`
+    : `/product/${slug}`;
+
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer group/card h-full flex flex-col relative border border-gray-100">
-      <Link
-        href={`/product/${slug}`}
-        className="absolute inset-0 z-5"
-        prefetch={false}
-      />
+      <Link href={href} className="absolute inset-0 z-5" prefetch={false} />
 
       {/* Badges */}
       <div className="absolute top-0 left-0 z-10 flex flex-col gap-1 pointer-events-none">

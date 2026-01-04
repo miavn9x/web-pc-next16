@@ -323,9 +323,12 @@ export class ProductService {
     return this.productModel
       .find({
         productCode: { $ne: productCode },
-        categoryCode: product.categoryCode,
+        // Use categorySlug (Root Category) to find items in the same main category
+        // If categories are very diverse, strict categoryCode might return 0 results
+        categorySlug: product.categorySlug,
         isActive: true,
       })
+      .sort({ createdAt: -1 })
       .limit(limit)
       .exec();
   }

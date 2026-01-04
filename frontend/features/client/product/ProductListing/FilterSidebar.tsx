@@ -83,9 +83,12 @@ const findCodeBySlug = (nodes: CategoryNode[], slug: string): string | null => {
   return null;
 };
 
+import { useSidebar } from "@/features/client/product/context/SidebarContext";
+
 export default function FilterSidebar({
   activeCategoryCode,
 }: FilterSidebarProps) {
+  const { isVisible } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,9 +98,22 @@ export default function FilterSidebar({
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ... (keeping existing logic)
+
+  // Use useEffect to fetch categories...
+  // (Assuming internal logic implies we keep hooks running)
+
+  // NOTE: Logic for activeCategory memo remains here
+
+  // We hide via CSS to preserve state/filters
+  const startClass =
+    "bg-white rounded-lg shadow-sm border border-gray-100 p-2 transition-all duration-300";
+
+  // Logic inside function body
   const activeCategory = useMemo(() => {
     if (activeCategoryCode) return activeCategoryCode;
-
+    // ...
+    // Re-implement useMemo logic for context
     const queryCat = searchParams.get("category");
     if (queryCat) return queryCat;
 
@@ -124,6 +140,12 @@ export default function FilterSidebar({
     };
     fetchCategories();
   }, []);
+
+  // ... (other handlers)
+
+  if (!isVisible) {
+    return <div className="hidden" />;
+  }
 
   const handleFilter = (code: string) => {
     // If clicking the current active category, allow deselecting -> go to root

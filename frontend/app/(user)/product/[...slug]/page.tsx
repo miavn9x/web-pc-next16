@@ -79,9 +79,58 @@ export default function SlugDispatcher() {
     );
   }
 
+  // Determine current category slug from URL params if available
+  const slugArray = params?.slug;
+  const currentCategorySlug =
+    Array.isArray(slugArray) && slugArray.length > 0 ? slugArray[0] : undefined;
+
+  // Use last slug for fetching logic (already defined above as const lastSlug)
+
   if (viewMode === "list") {
-    return <ProductListing initialCategoryCode={initialData} />;
+    // If we are in "list" mode, we are listing a category.
+    // The LAST slug in the URL is effectively the category slug we are viewing.
+    // e.g. /product/cat1 -> lastSlug = cat1.
+    // OR /product/cat1/subcat -> lastSlug = subcat.
+    // So currentCategorySlug should probably be lastSlug for the Listing context?
+    // Wait, if I am at /product/cat1, I want products to link to /product/cat1/prod.
+    // So currentCategorySlug should be `slugArray.join('/')`?
+    // No, ProductCard appends `slug`.
+    // If I pass `cat1`, ProductCard makes `/product/cat1/prod`. Correct.
+    // If I pass `cat1/subcat`, ProductCard makes `/product/cat1/subcat/prod`. Correct.
+    // So we should pass the full path of the current category context.
+    // Actually, `params.slug` joined by '/' IS the category path.
+    const categoryPath = Array.isArray(params?.slug)
+      ? params?.slug.join("/")
+      : (params?.slug as string);
+
+    return (
+      <React.Suspense
+        fallback={<div className="p-10 text-center">Đang tải sản phẩm...</div>}
+      >
+        <ProductListing
+          initialCategoryCode={initialData}
+          currentCategorySlug={categoryPath}
+        />
+      </React.Suspense>
+    );
   }
 
-  return <ProductDetail initialProduct={initialData as ProductData} />;
+  // If viewMode === "detail", we are on a product page.
+  // The URL might be /product/cat/prod.
+  // params.slug = ['cat', 'prod'].
+  // We want fallbackCategorySlug to be 'cat'.
+  // If URL is /product/cat/sub/prod. params.slug = ['cat', 'sub', 'prod'].
+  // fallbackCategorySlug = 'cat/sub'.
+  // So we take everything EXCEPT the last item.
+  const fallbackCategorySlug =
+    Array.isArray(params?.slug) && params.slug.length > 1
+      ? params.slug.slice(0, -1).join("/")
+      : undefined;
+
+  return (
+    <ProductDetail
+      initialProduct={initialData as ProductData}
+      fallbackCategorySlug={fallbackCategorySlug}
+    />
+  );
 }

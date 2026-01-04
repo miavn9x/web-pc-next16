@@ -8,6 +8,7 @@ import ProductTabs from "./components/ProductTabs";
 import RelatedProducts from "./components/RelatedProducts";
 import { productService } from "../services/product.service";
 import { ProductData } from "../types";
+import { useSidebar } from "../context/SidebarContext";
 
 // Breadcrumb simple component
 // Breadcrumb simple component
@@ -29,10 +30,9 @@ function Breadcrumb({
       <Link href="/" className="hover:text-blue-600 cursor-pointer">
         Trang chủ
       </Link>
-      <span>/</span>
-      <Link href="/product" className="hover:text-blue-600 cursor-pointer">
+      {/* <Link href="/product" className="hover:text-blue-600 cursor-pointer">
         Sản phẩm
-      </Link>
+      </Link> */}
       {categoryName && (
         <>
           <span>/</span>
@@ -72,9 +72,13 @@ import Link from "next/link";
 
 interface ProductDetailProps {
   initialProduct?: ProductData | null;
+  fallbackCategorySlug?: string; // From URL
 }
 
-export default function ProductDetail({ initialProduct }: ProductDetailProps) {
+export default function ProductDetail({
+  initialProduct,
+  fallbackCategorySlug,
+}: ProductDetailProps) {
   const params = useParams();
   const [product, setProduct] = useState<ProductData | null>(
     initialProduct || null
@@ -104,6 +108,13 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps) {
     fetchProduct();
   }, [params?.slug]);
 
+  // Handle Sidebar Visibility
+  const { setVisible } = useSidebar();
+  useEffect(() => {
+    setVisible(false); // Hide sidebar on Detail page
+    return () => setVisible(true); // Restore on unmount (optional, but good practice)
+  }, [setVisible]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -129,7 +140,7 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps) {
     <div className="py-4">
       <Breadcrumb
         categoryName={product.category || "Sản phẩm"}
-        categorySlug={product.categorySlug}
+        categorySlug={product.categorySlug || fallbackCategorySlug}
         subcategoryName={product.subcategory}
         subcategorySlug={product.subcategorySlug}
         name={product.name}

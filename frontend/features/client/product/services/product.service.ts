@@ -10,7 +10,7 @@ export interface GetProductsParams {
   maxPrice?: number;
   brand?: string;
   sortBy?: string;
-  sortOrder?: "ASC" | "DESC";
+  sortOrder?: "asc" | "desc";
   isFeatured?: boolean;
 }
 

@@ -1,24 +1,35 @@
+"use client";
+
 import React from "react";
 import FilterSidebar from "@/features/client/product/ProductListing/FilterSidebar";
+import {
+  SidebarProvider,
+  useSidebar,
+} from "@/features/client/product/context/SidebarContext";
 
-export default function ProductLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ProductLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isVisible } = useSidebar();
+
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col py-2">
       <div className="container mx-auto px-2 flex-1 flex flex-col">
         <div className="flex flex-col lg:flex-row gap-2 flex-1">
-          {/* Persistent Sidebar (Left Column) */}
-          <aside className="w-full lg:w-[20%] shrink-0">
-            <React.Suspense
-              fallback={
-                <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-              }
-            >
-              <FilterSidebar />
-            </React.Suspense>
+          {/* Persistent Sidebar (Left Column) - Only show if visible */}
+          <aside
+            className={`w-full lg:w-[20%] shrink-0 transition-all duration-300 ${
+              isVisible ? "block" : "hidden lg:hidden"
+            }`}
+          >
+            {/* We keep it mounted to preserve state, just hidden */}
+            <div className={!isVisible ? "hidden" : ""}>
+              <React.Suspense
+                fallback={
+                  <div className="h-96 bg-gray-100 rounded animate-pulse" />
+                }
+              >
+                <FilterSidebar />
+              </React.Suspense>
+            </div>
           </aside>
 
           {/* Main Content (Right Column: Listing or Detail) */}
@@ -26,5 +37,17 @@ export default function ProductLayout({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SidebarProvider>
+      <ProductLayoutContent>{children}</ProductLayoutContent>
+    </SidebarProvider>
   );
 }
